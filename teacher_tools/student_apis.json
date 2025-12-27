@@ -1,0 +1,11 @@
+{
+  "students": [
+    {
+      "id": 1,
+      "name": "홍길동",
+      "student_id": "2021001",
+      "api_url": "http://localhost:8000",
+      "active": true
+    }
+ ]
+}
