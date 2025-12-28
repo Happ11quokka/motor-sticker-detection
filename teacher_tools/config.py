@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-DEFAULT_IMAGE_FOLDER = Path(__file__).parent.parent / "data" / "motor_checker"
+DEFAULT_IMAGE_FOLDER = Path(__file__).parent.parent / "data" / "motor_checker_2" / "grayscale"
 DEFAULT_STUDENT_FILE = Path(__file__).parent / "student_apis.json"
 
 DEFAULT_INTERVAL = 0.5  # 업로드만 하므로 빠르게

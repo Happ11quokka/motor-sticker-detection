@@ -76,11 +76,29 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
     base64_image = encode_image(image_path)
 
     prompt = """
-    이 이미지를 분석해주세요:
-    1. 스티커가 있습니까? (예/아니오)
-    2. 스티커가 있다면:
-       - 스티커에 쓰여진 번호는 무엇입니까? (손글씨로 쓰여진 숫자)
-       - 스티커의 색깔은 무엇입니까? (초록색/노란색/빨간색 중 하나)
+    모터 부품 이미지에서 품질 검사용 원형 스티커를 찾아주세요.
+
+    [스티커 특징]
+    - 원형의 색깔 스티커 (초록색, 노란색, 또는 빨간색)
+    - 스티커 위에 손글씨로 쓰여진 3자리 숫자 (예: 102, 169, 213 등)
+    - 숫자 아래에 밑줄이 그어져 있을 수 있음 (밑줄은 숫자가 아님)
+
+    [색상 판별 방법]
+    1. 컬러 이미지인 경우: 스티커의 실제 색상을 직접 확인
+       - 초록색, 노란색, 빨간색 중 하나
+
+    2. 이미지가 흑백인 경우, DANGER 경고 스티커를 기준으로 색상을 판별하세요:
+    - DANGER 스티커에는 빨간색 영역(어두운 회색)과 노란색 번개 마크(중간 밝기)가 있습니다
+    - 이 기준과 비교하여    [흑백 이미지에서 색상 판별 방법 - 중요!] 원형 스티커의 색상을 판단:
+      * 원형 스티커가 DANGER의 빨간색 영역과 비슷한 밝기 → 빨간색
+      * 원형 스티커가 DANGER의 노란색 번개와 비슷한 밝기 → 노란색
+      * 원형 스티커가 둘 다보다 밝음 (가장 연한 회색) → 초록색
+    3. 스티커가 보이지 않거나 색상을 판별할 수 없으면 null로 설정하세요
+      
+    [숫자 인식 주의사항]
+    - 손글씨 숫자는 보통 3자리입니다
+    - 숫자 '1'은 세로 막대 형태로, 밑줄과 구분해주세요
+    - 밑줄은 숫자의 일부가 아닙니다
 
     다음 JSON 형식으로만 답변해주세요:
     {
@@ -129,7 +147,8 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
                 result_text = result_text.split("</think>")[-1].strip()
 
             if "```json" in result_text:
-                result_text = result_text.split("```json")[1].split("```")[0].strip()
+                result_text = result_text.split(
+                    "```json")[1].split("```")[0].strip()
             elif "```" in result_text:
                 result_text = result_text.split("```")[1].strip()
 
@@ -144,7 +163,8 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
             if "502" in error_str or "bad gateway" in error_str or "500" in error_str or "503" in error_str:
                 if attempt < max_retries - 1:
                     wait_time = (attempt + 1) * 2  # 2초, 4초, 6초...
-                    print(f"[재시도 {attempt + 1}/{max_retries}] 서버 오류 발생, {wait_time}초 후 재시도...")
+                    print(
+                        f"[재시도 {attempt + 1}/{max_retries}] 서버 오류 발생, {wait_time}초 후 재시도...")
                     time.sleep(wait_time)
                     continue
 
@@ -200,7 +220,8 @@ def analyze_image_group(images: list) -> dict:
                     "number": sticker_info.get("number"),
                     "color": sticker_info.get("color")
                 }
-                print(f"    ✓ 스티커 발견! (번호: {sticker_info.get('number')}, 색: {sticker_info.get('color')})")
+                print(
+                    f"    ✓ 스티커 발견! (번호: {sticker_info.get('number')}, 색: {sticker_info.get('color')})")
 
             results.append({
                 "filename": img_info['filename'],
@@ -283,7 +304,8 @@ def background_worker():
             img_info = image_queue.get(timeout=1)
             pending_images.append(img_info)
 
-            print(f"[워커] 이미지 수신: {img_info['filename']} | 대기 중: {len(pending_images)}/3")
+            print(
+                f"[워커] 이미지 수신: {img_info['filename']} | 대기 중: {len(pending_images)}/3")
 
             # 3개가 모이면 분석 시작
             if len(pending_images) >= 3:

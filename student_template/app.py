@@ -2,6 +2,7 @@
 Motor Sticker Detection API Server
 
 이미지를 업로드하면 백그라운드에서 3개씩 그룹으로 분석합니다.
+업로드 완료 후 /start-analysis로 분석을 시작합니다.
 """
 import threading
 from datetime import datetime
@@ -13,8 +14,14 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 import config
-from models import load_results
+from models import load_results, clear_results
 from worker import image_queue, background_worker
+
+# 분석 상태 관리
+analysis_state = {
+    "is_analyzing": False,
+    "worker_thread": None
+}
 
 
 # FastAPI 앱 생성
@@ -77,12 +84,10 @@ async def upload_image(file: UploadFile = File(...)):
             "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
-        print(f"[업로드] 큐에 추가하기 전 - 큐 크기: {image_queue.qsize()}")
         image_queue.put(image_info)
-        print(f"[업로드] 큐에 추가한 후 - 큐 크기: {image_queue.qsize()}")
         image_buffer.append(image_info)
 
-        print(f"[업로드 완료] {filename} | 큐 크기: {image_queue.qsize()}")
+        print(f"[업로드] {filename} | 큐 크기: {image_queue.qsize()}")
 
         return {
             "success": True,
@@ -94,6 +99,62 @@ async def upload_image(file: UploadFile = File(...)):
     except Exception as e:
         print(f"[업로드 오류] {str(e)}")
         raise HTTPException(status_code=500, detail=f"업로드 중 오류 발생: {str(e)}")
+
+
+@app.post("/start-analysis")
+async def start_analysis():
+    """
+    업로드된 이미지 분석 시작
+
+    업로드가 모두 완료된 후 이 엔드포인트를 호출하면 분석을 시작합니다.
+    """
+    queue_size = image_queue.qsize()
+
+    if queue_size == 0:
+        return {
+            "success": False,
+            "message": "분석할 이미지가 없습니다.",
+            "queue_size": 0
+        }
+
+    if analysis_state["is_analyzing"]:
+        return {
+            "success": False,
+            "message": "이미 분석이 진행 중입니다.",
+            "queue_size": queue_size
+        }
+
+    # 분석 시작
+    analysis_state["is_analyzing"] = True
+
+    def run_analysis():
+        try:
+            background_worker()
+        finally:
+            analysis_state["is_analyzing"] = False
+
+    worker_thread = threading.Thread(target=run_analysis, daemon=True)
+    worker_thread.start()
+    analysis_state["worker_thread"] = worker_thread
+
+    print(f"\n{'='*50}")
+    print(f"[분석 시작] 큐에 있는 {queue_size}개 이미지 분석 시작")
+    print(f"{'='*50}\n")
+
+    return {
+        "success": True,
+        "message": f"분석 시작됨 ({queue_size}개 이미지)",
+        "queue_size": queue_size
+    }
+
+
+@app.get("/analysis-status")
+async def get_analysis_status():
+    """분석 진행 상태 확인"""
+    return {
+        "is_analyzing": analysis_state["is_analyzing"],
+        "queue_size": image_queue.qsize()
+    }
 
 
 def get_dashboard_data():
@@ -153,6 +214,7 @@ def create_gradio_interface():
 
         with gr.Row():
             refresh_btn = gr.Button("새로고침", variant="primary")
+            clear_btn = gr.Button("결과 전체 삭제", variant="stop")
 
         gr.Markdown("## 최근 분석 결과 (최대 20개)")
         results_table = gr.Dataframe(
@@ -167,9 +229,21 @@ def create_gradio_interface():
             table_data, stats, total, normal, minor, severe = get_dashboard_data()
             return table_data, total, normal, minor, severe
 
+        def clear_and_update():
+            """결과 삭제 후 대시보드 업데이트"""
+            clear_results()
+            return update_dashboard()
+
         # 새로고침 버튼 클릭 시
         refresh_btn.click(
             fn=update_dashboard,
+            inputs=[],
+            outputs=[results_table, total_count, normal_count, minor_count, severe_count]
+        )
+
+        # 결과 삭제 버튼 클릭 시
+        clear_btn.click(
+            fn=clear_and_update,
             inputs=[],
             outputs=[results_table, total_count, normal_count, minor_count, severe_count]
         )
@@ -206,17 +280,13 @@ if __name__ == "__main__":
     print(f"Gradio 포트: {config.GRADIO_PORT}")
     print("="*70)
 
-    # 백그라운드 워커 시작 (3개씩 그룹 분석)
-    worker_thread = threading.Thread(target=background_worker, daemon=True)
-    worker_thread.start()
-
     # Gradio 대시보드 시작
     gradio_thread = threading.Thread(target=run_gradio, daemon=True)
     gradio_thread.start()
 
     print(f"\n✓ FastAPI 서버: http://localhost:{config.SERVER_PORT}")
     print(f"✓ Gradio 대시보드: http://localhost:{config.GRADIO_PORT}")
-    print(f"✓ 백그라운드 워커: 실행 중 (3개씩 그룹 분석)\n")
+    print(f"✓ 분석 대기 중 (POST /start-analysis 로 시작)\n")
 
     # FastAPI 서버 실행
     uvicorn.run(app, host="0.0.0.0", port=config.SERVER_PORT)

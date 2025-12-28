@@ -67,6 +67,21 @@ def send_image(api_url: str, image_path: Path, timeout: int = config.DEFAULT_TIM
         }
 
 
+def start_analysis(api_url: str, timeout: int = 30) -> Dict:
+    """업로드 완료 후 분석 시작 요청"""
+    try:
+        response = requests.post(
+            f"{api_url}/start-analysis",
+            timeout=timeout
+        )
+        if response.status_code == 200:
+            return {'success': True, 'data': response.json()}
+        else:
+            return {'success': False, 'error': response.text}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+
 def send_images_to_student(
     student: Dict,
     images: List[Path],
@@ -85,7 +100,9 @@ def send_images_to_student(
         'details': []
     }
 
-    for image_path in tqdm(images, desc=f"{student['name']} 전송 중"):
+    # 1단계: 모든 이미지 업로드
+    print("[1/2] 이미지 업로드 중...")
+    for image_path in tqdm(images, desc=f"업로드"):
         result = send_image(student['api_url'], image_path, timeout)
 
         if result['success']:
@@ -104,7 +121,17 @@ def send_images_to_student(
         if interval > 0 and image_path != images[-1]:
             time.sleep(interval)
 
-    print(f"\n결과: 성공 {results['success']} / 실패 {results['failed']}\n")
+    print(f"\n업로드 완료: 성공 {results['success']} / 실패 {results['failed']}")
+
+    # 2단계: 분석 시작 요청
+    print("\n[2/2] 분석 시작 요청...")
+    analysis_result = start_analysis(student['api_url'])
+    if analysis_result['success']:
+        print(f"✓ 분석 시작됨: {analysis_result['data'].get('message', '')}")
+    else:
+        print(f"✗ 분석 시작 실패: {analysis_result.get('error', 'Unknown error')}")
+
+    results['analysis_started'] = analysis_result['success']
 
     return results
 

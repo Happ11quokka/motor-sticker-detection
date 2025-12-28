@@ -155,3 +155,17 @@ def determine_defect_level(color: Optional[str]) -> str:
         return "심각한 불량"
     else:
         return "미확인"
+
+
+def clear_results():
+    """모든 분석 결과 삭제"""
+    with file_lock:
+        empty_data = {"total_images": 0, "groups": [], "results": []}
+        try:
+            with open(config.RESULTS_FILE, "w", encoding="utf-8") as f:
+                json.dump(empty_data, f, ensure_ascii=False, indent=2)
+            print("[INFO] 분석 결과가 모두 삭제되었습니다.")
+            return True
+        except Exception as e:
+            print(f"[ERROR] 결과 삭제 실패: {e}")
+            return False
