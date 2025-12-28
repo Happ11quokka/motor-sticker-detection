@@ -18,6 +18,7 @@ from langsmith.wrappers import wrap_openai
 import config
 from models import (
     file_lock,
+    load_results,
     load_results_unsafe,
     encode_image,
     determine_defect_level
@@ -327,3 +328,113 @@ def background_worker():
                 print(f"[워커 큐 오류] {error_type}: {e}")
                 print(traceback.format_exc())
             continue
+
+
+@traceable(
+    name="chat_with_data",
+    run_type="llm",
+    metadata={
+        "component": "chatbot",
+        "model": config.MODEL_NAME
+    }
+)
+def chat_with_data(user_message: str) -> str:
+    """
+    분석 데이터를 기반으로 사용자 질문에 답변하는 챗봇
+    (vLLM/Qwen 모델 사용)
+
+    Args:
+        user_message: 사용자 질문
+
+    Returns:
+        AI 응답 문자열
+    """
+    # 현재 분석 데이터 로드
+    data = load_results()
+    results = data.get("results", [])
+    total_images = data.get("total_images", 0)
+
+    # 통계 계산
+    total_results = len(results)
+    normal_count = sum(1 for r in results if r.get("defect_level") == "정상")
+    minor_count = sum(1 for r in results if r.get("defect_level") == "경미한 불량")
+    severe_count = sum(1 for r in results if r.get("defect_level") == "심각한 불량")
+    unknown_count = sum(1 for r in results if r.get("defect_level") == "미확인")
+
+    # 불량률 계산
+    defect_count = minor_count + severe_count
+    defect_rate = (defect_count / total_results * 100) if total_results > 0 else 0
+
+    # 최근 결과 샘플 (최대 10개)
+    recent_samples = results[-10:] if results else []
+    samples_text = ""
+    for r in recent_samples:
+        samples_text += f"  - ID {r.get('id')}: {r.get('filename')}, 색상: {r.get('sticker_color', '-')}, 불량수준: {r.get('defect_level', '-')}\n"
+
+    # 비율 계산
+    normal_pct = (normal_count / total_results * 100) if total_results > 0 else 0
+    minor_pct = (minor_count / total_results * 100) if total_results > 0 else 0
+    severe_pct = (severe_count / total_results * 100) if total_results > 0 else 0
+
+    # 데이터 컨텍스트 생성
+    data_context = f"""
+## 모터 스티커 검사 분석 데이터 요약
+
+### 전체 통계
+- 총 처리된 이미지 수: {total_images}장
+- 스티커 분석 결과 수: {total_results}건
+- 정상 (초록색): {normal_count}건 ({normal_pct:.1f}%)
+- 경미한 불량 (노란색): {minor_count}건 ({minor_pct:.1f}%)
+- 심각한 불량 (빨간색): {severe_count}건 ({severe_pct:.1f}%)
+- 미확인: {unknown_count}건
+
+### 불량률
+- 전체 불량품 수: {defect_count}건
+- 불량률: {defect_rate:.1f}%
+
+### 최근 분석 결과 (최대 10개)
+{samples_text if samples_text else "  (분석 결과 없음)"}
+"""
+
+    system_prompt = """당신은 모터 부품 품질 검사 시스템의 AI 어시스턴트입니다.
+사용자가 분석 결과에 대해 질문하면, 제공된 데이터를 바탕으로 명확하고 간결하게 답변해주세요.
+
+역할:
+- 불량품 현황과 통계를 요약해드립니다
+- 품질 트렌드를 분석해드립니다
+- 개선이 필요한 부분을 파악해드립니다
+
+답변 시 주의사항:
+- 숫자와 비율은 정확하게 계산해서 제공하세요
+- 한국어로 친절하게 답변하세요
+- 데이터가 없으면 솔직하게 말씀해주세요
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model=config.MODEL_NAME,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": f"다음은 현재 분석 데이터입니다:\n{data_context}\n\n사용자 질문: {user_message}"
+                }
+            ],
+            max_tokens=1000,
+            temperature=0.7
+        )
+
+        result_text = response.choices[0].message.content.strip()
+
+        # Qwen 모델의 <think> 태그 제거
+        if "<think>" in result_text and "</think>" in result_text:
+            result_text = result_text.split("</think>")[-1].strip()
+
+        return result_text
+
+    except Exception as e:
+        print(f"[챗봇 오류] {e}")
+        return f"죄송합니다. 응답 생성 중 오류가 발생했습니다: {str(e)}"

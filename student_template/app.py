@@ -4,6 +4,8 @@ Motor Sticker Detection API Server
 이미지를 업로드하면 백그라운드에서 3개씩 그룹으로 분석합니다.
 업로드 완료 후 /start-analysis로 분석을 시작합니다.
 """
+import io
+import csv
 import threading
 from datetime import datetime
 from collections import deque
@@ -15,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import config
 from models import load_results, clear_results
-from worker import image_queue, background_worker
+from worker import image_queue, background_worker, chat_with_data
 
 # 분석 상태 관리
 analysis_state = {
@@ -200,6 +202,71 @@ def get_dashboard_data():
     return table_data, stats, total, normal, minor, severe
 
 
+def export_results_to_csv():
+    """
+    전체 분석 결과를 CSV 파일로 내보내기
+
+    Returns:
+        CSV 파일 경로 (Gradio File 컴포넌트용)
+    """
+    data = load_results()
+    results = data.get("results", [])
+
+    if not results:
+        return None
+
+    # CSV 파일 생성
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # 헤더 작성
+    writer.writerow(["ID", "시간", "파일명", "그룹ID", "스티커유무", "번호", "색상", "불량수준"])
+
+    # 데이터 작성
+    for r in results:
+        writer.writerow([
+            r.get("id", ""),
+            r.get("timestamp", ""),
+            r.get("filename", ""),
+            r.get("group_id", ""),
+            "O" if r.get("has_sticker") else "X",
+            r.get("sticker_number", ""),
+            r.get("sticker_color", ""),
+            r.get("defect_level", "")
+        ])
+
+    # 파일로 저장
+    csv_filename = f"analysis_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    csv_path = config.DATA_DIR / csv_filename
+
+    with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
+        f.write(output.getvalue())
+
+    print(f"[CSV 내보내기] {csv_path}")
+    return str(csv_path)
+
+
+def chatbot_response(message, history):
+    """
+    챗봇 응답 생성 (vLLM/Qwen 사용)
+
+    Args:
+        message: 사용자 메시지
+        history: 대화 기록
+
+    Returns:
+        AI 응답
+    """
+    if not message.strip():
+        return "질문을 입력해주세요."
+
+    try:
+        response = chat_with_data(message)
+        return response
+    except Exception as e:
+        return f"오류가 발생했습니다: {str(e)}"
+
+
 def create_gradio_interface():
     """Gradio 대시보드 UI 생성"""
     with gr.Blocks(title="Motor Sticker Detection Dashboard") as demo:
@@ -215,6 +282,9 @@ def create_gradio_interface():
         with gr.Row():
             refresh_btn = gr.Button("새로고침", variant="primary")
             clear_btn = gr.Button("결과 전체 삭제", variant="stop")
+            csv_btn = gr.Button("📥 전체 결과 CSV 다운로드", variant="secondary")
+
+        csv_file = gr.File(label="다운로드 파일", visible=False)
 
         gr.Markdown("## 최근 분석 결과 (최대 20개)")
         results_table = gr.Dataframe(
@@ -248,11 +318,80 @@ def create_gradio_interface():
             outputs=[results_table, total_count, normal_count, minor_count, severe_count]
         )
 
+        # CSV 다운로드 버튼 클릭 시
+        def download_csv():
+            """CSV 파일 생성 후 반환"""
+            path = export_results_to_csv()
+            if path:
+                return gr.update(value=path, visible=True)
+            return gr.update(value=None, visible=False)
+
+        csv_btn.click(
+            fn=download_csv,
+            inputs=[],
+            outputs=[csv_file]
+        )
+
         # 페이지 로드 시 자동 업데이트
         demo.load(
             fn=update_dashboard,
             inputs=[],
             outputs=[results_table, total_count, normal_count, minor_count, severe_count]
+        )
+
+        # 챗봇 섹션
+        gr.Markdown("---")
+        gr.Markdown("## 🤖 AI 분석 어시스턴트")
+        gr.Markdown("분석 결과에 대해 질문하세요. (예: '불량품 비율은?', '결과를 요약해줘', '가장 많은 불량 유형은?')")
+
+        chatbot = gr.Chatbot(
+            label="대화",
+            height=300
+        )
+        msg_input = gr.Textbox(
+            label="질문 입력",
+            placeholder="분석 결과에 대해 질문하세요...",
+            lines=1
+        )
+        with gr.Row():
+            send_btn = gr.Button("전송", variant="primary")
+            clear_chat_btn = gr.Button("대화 초기화")
+
+        def respond(message, chat_history):
+            """챗봇 응답 처리"""
+            if not message.strip():
+                return "", chat_history
+
+            # AI 응답 생성
+            bot_response = chatbot_response(message, chat_history)
+
+            # messages 형식으로 추가
+            chat_history = chat_history + [
+                {"role": "user", "content": message},
+                {"role": "assistant", "content": bot_response}
+            ]
+
+            return "", chat_history
+
+        def clear_chat():
+            """대화 초기화"""
+            return []
+
+        # 챗봇 이벤트 연결
+        msg_input.submit(
+            fn=respond,
+            inputs=[msg_input, chatbot],
+            outputs=[msg_input, chatbot]
+        )
+        send_btn.click(
+            fn=respond,
+            inputs=[msg_input, chatbot],
+            outputs=[msg_input, chatbot]
+        )
+        clear_chat_btn.click(
+            fn=clear_chat,
+            inputs=[],
+            outputs=[chatbot]
         )
 
     return demo
