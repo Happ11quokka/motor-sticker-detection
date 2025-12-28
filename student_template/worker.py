@@ -6,6 +6,7 @@
 """
 import json
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from queue import Queue
@@ -54,15 +55,20 @@ image_queue = Queue()
 @traceable(
     name="analyze_sticker",
     run_type="llm",
-    metadata={"component": "vision_analysis"}
+    metadata={
+        "component": "vision_analysis",
+        "model": config.MODEL_NAME,
+        "provider": "runpod" if "runpod" in config.API_BASE_URL else "openai"
+    }
 )
-def analyze_sticker(image_path: Path) -> dict:
+def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
     """
     Vision Model API를 사용하여 이미지에서 스티커 정보 추출
-    (LangSmith 추적 포함)
+    (LangSmith 추적 포함, 재시도 로직 포함)
 
     Args:
         image_path: 분석할 이미지 경로
+        max_retries: 최대 재시도 횟수 (502 오류 등 일시적 오류 대응)
 
     Returns:
         스티커 정보 딕셔너리 {has_sticker, number, color}
@@ -84,56 +90,81 @@ def analyze_sticker(image_path: Path) -> dict:
     }
     """
 
-    try:
-        response = client.chat.completions.create(
-            model=config.MODEL_NAME,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "당신은 이미지 분석 전문가입니다. 스티커 정보를 정확히 추출하여 JSON 형식으로만 응답하세요."
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{base64_image}"
+    last_error = None
+
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.completions.create(
+                model=config.MODEL_NAME,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "당신은 이미지 분석 전문가입니다. 스티커 정보를 정확히 추출하여 JSON 형식으로만 응답하세요."
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": prompt
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                }
                             }
-                        }
-                    ]
-                }
-            ],
-            max_tokens=150,
-            temperature=0.1
-        )
+                        ]
+                    }
+                ],
+                max_tokens=150,
+                temperature=0.1
+            )
 
-        result_text = response.choices[0].message.content.strip()
-        print(f"[DEBUG] API 응답: {result_text}")
+            result_text = response.choices[0].message.content.strip()
+            print(f"[DEBUG] API 응답: {result_text}")
 
-        if "```json" in result_text:
-            result_text = result_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in result_text:
-            result_text = result_text.split("```")[1].strip()
+            # Qwen 모델의 <think> 태그 제거 (thinking 모드 응답 처리)
+            if "<think>" in result_text and "</think>" in result_text:
+                result_text = result_text.split("</think>")[-1].strip()
 
-        result = json.loads(result_text)
-        return result
+            if "```json" in result_text:
+                result_text = result_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in result_text:
+                result_text = result_text.split("```")[1].strip()
 
-    except Exception as e:
-        import traceback
-        print(f"분석 오류: {e}")
-        print(f"상세 오류:\n{traceback.format_exc()}")
-        return {"has_sticker": False, "number": None, "color": None, "error": str(e)}
+            result = json.loads(result_text)
+            return result
+
+        except Exception as e:
+            last_error = e
+            error_str = str(e).lower()
+
+            # 502 Bad Gateway 또는 서버 오류인 경우 재시도
+            if "502" in error_str or "bad gateway" in error_str or "500" in error_str or "503" in error_str:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2  # 2초, 4초, 6초...
+                    print(f"[재시도 {attempt + 1}/{max_retries}] 서버 오류 발생, {wait_time}초 후 재시도...")
+                    time.sleep(wait_time)
+                    continue
+
+            # 다른 오류는 바로 종료
+            break
+
+    import traceback
+    print(f"분석 오류: {last_error}")
+    print(f"상세 오류:\n{traceback.format_exc()}")
+    return {"has_sticker": False, "number": None, "color": None, "error": str(last_error)}
 
 
 @traceable(
     name="analyze_image_group",
     run_type="chain",
-    metadata={"component": "group_analysis"}
+    metadata={
+        "component": "group_analysis",
+        "model": config.MODEL_NAME,
+        "provider": "runpod" if "runpod" in config.API_BASE_URL else "openai"
+    }
 )
 def analyze_image_group(images: list) -> dict:
     """
