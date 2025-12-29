@@ -1,9 +1,25 @@
+# FastAPI & Web
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 python-multipart>=0.0.6
 gradio>=4.0.0
+
+# AI/ML
 openai>=1.0.0
+# DeepSeek-OCR은 원격 vLLM 서버에서 실행되므로 로컬에서는 torch 불필요
+# 로컬에서 직접 실행하려면 아래 주석 해제:
+# torch==2.6.0
+# transformers==4.46.3
+# tokenizers==0.20.3
+# einops
+# addict
+# easydict
+# pip install flash-attn==2.7.3 --no-build-isolation
+
+# Utilities
 python-dotenv>=1.0.0
 pydantic>=2.0.0
 Pillow>=10.0.0
+
+# Monitoring
 langsmith>=0.1.0

@@ -4,10 +4,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Vision Model API
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-API_KEY = os.getenv("API_KEY", "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")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o")
+# Vision Model API (OpenAI 호환 API용 - 챗봇에서 사용)
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/v1")
+API_KEY = os.getenv("API_KEY", "token-abc123")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen3-VL-8B-Instruct")
+
+# DeepSeek-OCR vLLM API 설정
+DEEPSEEK_API_BASE_URL = os.getenv("DEEPSEEK_API_BASE_URL", "http://localhost:8000/v1")
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "token-abc123")
+DEEPSEEK_OCR_MODEL = os.getenv("DEEPSEEK_OCR_MODEL", "deepseek-ai/DeepSeek-OCR")
+
+# OCR 엔진 선택: "deepseek" 또는 "openai"
+OCR_ENGINE = os.getenv("OCR_ENGINE", "deepseek")
 
 # Server Ports
 SERVER_PORT = int(os.getenv("SERVER_PORT", "8000"))
