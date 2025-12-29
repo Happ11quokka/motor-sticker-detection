@@ -1,318 +1,325 @@
 # Motor Sticker Detection System
 
-이미지에서 스티커를 검출하고 불량 여부를 판단하는 시스템 - 학생 실습 프로젝트
+이미지에서 모터 스티커를 자동으로 검출하고 불량 여부를 판단하는 AI 기반 품질 검사 시스템
 
-## 해야할 일
+## Background
 
-  - 1. 문제 정의
-    - 작업자는 불량 검사를 하고 이미지를 서버로 전송만 함.
-    - 어떤 서비스가 되어야 작업자 (+관리자) 는 만족할 것인가?
-    
-  - 2. 구현
-    - 제한된 지능 (GPU 리소스 제한, API 비용 제한) 에서 오류 없이 정확한 자동 분석 시스템 만들기
-    - 유저가 원하는 정보를 조합해서 보기 좋게 만들기
-    - 유저는 절대 이상적으로 행동하지 않음
-    
-  - 3. 피칭
-    - 만든 과정과 결과물을 효과적으로 어필하기
+### 기존 문제점
+- OpenAI API 모델 사용 시 비용 및 정확도 문제
 
+### 해결 방안
+| 항목 | 내용 |
+|------|------|
+| **GPU 환경** | Runpod (최대 40GB VRAM) |
+| **선택 모델** | Qwen/Qwen3-VL-8B-Instruct |
+| **선택 이유** | 40GB 용량 내에서 실행 가능한 Vision-Language 모델 |
+| **서빙 방식** | vLLM (OpenAI Compatible API) |
 
-## 프로젝트 개요
+---
 
-학생들이 FastAPI와 Gradio를 사용하여 이미지 분석 API 서버를 구축하고, 교수자가 제공하는 이미지를 분석하여 실시간 대시보드를 업데이트하는 실습 프로젝트입니다.
-
-### 시스템 아키텍처
+## Architecture
 
 ```
-[교수자 도구]              [학생 API 서버]           [Vision Model GPU]
-image_sender.py ---------> FastAPI Server ---------> OpenAI Compatible API
-                                  |
-                                  v
-                          Gradio Dashboard
-                                  |
-                                  v
-                          JSON Data Storage
+┌─────────────────┐      ┌──────────────────┐      ┌─────────────────────┐
+│  Teacher Tools  │      │  Student Server  │      │   Vision Model API  │
+│  image_sender   │─────▶│  FastAPI + Gradio│─────▶│  (vLLM/Qwen)        │
+└─────────────────┘      └────────┬─────────┘      └─────────────────────┘
+                                  │
+                                  ▼
+                         ┌────────────────┐
+                         │  Dashboard UI  │
+                         │   (Gradio)     │
+                         └────────┬───────┘
+                                  │
+                                  ▼
+                         ┌────────────────┐
+                         │  JSON Storage  │
+                         │  + CSV Export  │
+                         └────────────────┘
 ```
 
-## 프로젝트 구조
+### Project Structure
 
 ```
-project/
-├── README.md                          # 전체 프로젝트 문서 (이 파일)
-├── plans.md                           # 구현 계획서
-├── requirements.txt                   # 공통 의존성
-├── .gitignore                         # Git 무시 파일
+Motor_Sticker_Detection_System/
+├── student_template/          # 메인 API 서버
+│   ├── app.py                 # FastAPI + Gradio 대시보드
+│   ├── worker.py              # Vision Model 호출 + 분석 로직
+│   ├── models.py              # 데이터 모델 + 유틸리티
+│   ├── config.py              # 환경 설정
+│   └── data/
+│       ├── uploads/           # 업로드된 이미지 저장
+│       └── results.json       # 분석 결과 저장
 │
-├── student_template/                  # ★ 학생용 템플릿
-│   ├── app.py                         # FastAPI + Gradio 서버
-│   ├── config.py                      # 설정 관리
-│   ├── requirements.txt               # 의존성
-│   ├── .env.example                   # 환경변수 예시
-│   ├── README.md                      # 학생용 가이드
-│   ├── data/
-│   │   ├── uploads/                   # 업로드된 이미지
-│   │   └── results.json               # 분석 결과
-│   └── static/                        # 정적 파일
+├── teacher_tools/             # 교수자 도구
+│   ├── image_sender.py        # 이미지 자동 전송
+│   └── student_apis.json      # 학생 API 목록
 │
-├── teacher_tools/                     # ★ 교수자용 도구
-│   ├── image_sender.py                # 자동 이미지 전송
-│   ├── config.py                      # 설정
-│   ├── student_apis.json              # 학생 API 목록
-│   ├── requirements.txt               # 의존성
-│   └── README.md                      # 교수자용 가이드
-│
-└── venv/                              # 가상환경
+└── data/                      # 테스트 데이터셋
+    ├── motor_checker/         # 원본 컬러 이미지 (6개)
+    └── motor_checker_2/
+        ├── grayscale/         # 흑백 이미지 (36개)
+        └── blurred/           # 가우시안 블러 이미지 (36개)
 ```
 
-## 빠른 시작 가이드
+---
 
-### 교수자용
+## Test Scenarios
 
-1. **환경 설정**
-   ```bash
-   cd project
-   python3 -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   ```
+### 1. 컬러 이미지 처리
+- **데이터셋**: `data/motor_checker/` (원본 이미지)
+- **처리 방식**: Vision Model이 직접 색상 판별
+- **판별 기준**: 초록색/노란색/빨간색 스티커 직접 인식
 
-2. **학생 API 목록 작성**
-   ```bash
-   cd teacher_tools
-   # student_apis.json 파일 편집
-   ```
+### 2. 흑백 이미지 처리
+- **데이터셋**: `data/motor_checker_2/grayscale/` (36개)
+- **생성 알고리즘**: PIL의 `Image.convert('L')` 사용
+- **목적**: 흑백 이미지 대응
 
-3. **이미지 전송**
-   ```bash
-   pip install -r requirements.txt
-   python image_sender.py
-   ```
+```python
+from PIL import Image
+img = Image.open("original.jpg")
+grayscale_img = img.convert('L')  # Luminance 모드로 변환
+grayscale_img.save("grayscale.jpg")
+```
 
-자세한 내용: [teacher_tools/README.md](teacher_tools/README.md)
+### 3. 흐린 이미지 처리 (가우시안 블러)
+- **데이터셋**: `data/motor_checker_2/blurred/` (36개)
+- **생성 알고리즘**: OpenCV GaussianBlur 필터
+- **목적**: 초점이 맞지 않은 사진 시뮬레이션
 
-### 학생용
+```python
+import cv2
+img = cv2.imread("original.jpg")
+blurred = cv2.GaussianBlur(img, (15, 15), 0)
+cv2.imwrite("blurred.jpg", blurred)
+```
 
-1. **템플릿 복사**
-   ```bash
-   cp -r student_template my_project
-   cd my_project
-   ```
+---
 
-2. **가상환경 및 패키지 설치**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
+## System Workflow
 
-3. **환경변수 설정**
-   ```bash
-   cp .env.example .env
-   # .env 파일 편집 (API 정보 입력)
-   ```
+```
+[1] 이미지 업로드 (POST /upload)
+     │
+     │  • 파일 검증: 이미지 형식, 10MB 이하
+     │  • 타임스탬프 파일명: {YYYYMMDD_HHMMSS_ffffff}_{원본파일명}
+     │  • 저장 위치: student_template/data/uploads/
+     ▼
+[2] 분석 시작 (POST /start-analysis)
+     │
+     │  • 백그라운드 워커 스레드 생성
+     │  • 3개씩 배치 처리
+     ▼
+[3] Vision Model 분석
+     │
+     │  [이미지 전처리]
+     │  • RGBA → RGB 변환
+     │  • 1024x1024 이하로 리사이징
+     │  • JPEG 품질 85로 압축
+     │  • Base64 인코딩
+     │
+     │  [API 호출]
+     │  • OpenAI Compatible API 사용
+     │  • max_tokens=150, temperature=0.1
+     │  • 최대 3회 재시도 (502/500/503 오류)
+     ▼
+[4] 응답 파싱 및 불량 판정
+     │
+     │  • 초록색 → "정상"
+     │  • 노란색 → "경미한 불량"
+     │  • 빨간색 → "심각한 불량"
+     ▼
+[5] 결과 저장 → results.json
+```
 
-4. **서버 실행**
-   ```bash
-   python app.py
-   ```
+---
 
-자세한 내용: [student_template/README.md](student_template/README.md)
+## Key Features
 
-## 주요 기능
+### Image Analysis
+- **Sticker Detection** - 모터 이미지에서 스티커 유무 자동 검출
+- **Information Extraction** - 스티커 번호 및 색상 정보 추출
+- **Defect Classification** - 불량 수준 3단계 분류 (정상/경미한 불량/심각한 불량)
+- **Batch Processing** - 3개 이미지씩 그룹으로 효율적 처리
 
-### 학생 구현 사항
+### Dashboard
+- **Real-time Statistics** - 총 처리 이미지, 불량 수준별 통계
+- **Result Table** - 최근 분석 결과 20개 표시
+- **CSV Export** - 전체 분석 결과 CSV 파일 다운로드
+- **AI Assistant** - 분석 결과에 대한 자연어 질의응답
 
-- [x] FastAPI 기반 REST API 서버
-- [x] 이미지 업로드 엔드포인트 (`POST /analyze`)
-- [x] Vision Model API 연동
-- [x] 스티커 정보 추출 (번호, 색상)
-- [x] 불량 수준 판정 (정상/경미/심각)
-- [x] JSON 파일 데이터 저장
-- [x] Gradio 실시간 대시보드
-  - 총 처리된 이미지 수
-  - 불량 수준별 통계
-  - 최근 분석 결과 테이블
-  - 새로고침 기능
+### Teacher Tools
+- **Automated Transmission** - 여러 학생 API로 자동 이미지 전송
+- **Parallel/Sequential Mode** - 순차 또는 병렬 전송 지원
+- **Progress Tracking** - 진행률 표시 및 재시도 처리
 
-### 교수자 도구 기능
+---
 
-- [x] 여러 학생 API로 자동 이미지 전송
-- [x] 순차/병렬 전송 모드
-- [x] 전송 결과 요약 및 통계
-- [x] JSON 형식 결과 저장
-- [x] 진행률 표시
-- [x] 재시도 및 에러 처리
-- [x] 다양한 옵션 (간격, 타임아웃, 반복 등)
+## Prompt Design
 
-## 기술 스택
+### 스티커 분석 프롬프트
 
-### 학생용
-- **FastAPI**: 고성능 비동기 웹 프레임워크
-- **Gradio**: 빠른 대시보드 UI 생성
-- **OpenAI SDK**: Vision Model API 클라이언트
-- **Uvicorn**: ASGI 서버
-- **Pydantic**: 데이터 검증
+```
+모터 부품 이미지에서 품질 검사용 원형 스티커를 찾아주세요.
 
-### 교수자용
-- **requests**: HTTP 클라이언트
-- **tqdm**: 진행률 표시
-- **concurrent.futures**: 병렬 처리
+[스티커 특징]
+- 원형의 색깔 스티커 (초록색, 노란색, 또는 빨간색)
+- 스티커 위에 손글씨로 쓰여진 3자리 숫자 (예: 102, 169, 213 등)
+- 숫자 아래에 밑줄이 그어져 있을 수 있음 (밑줄은 숫자가 아님)
 
-## 설치 및 설정
+[색상 판별 방법]
+1. 컬러 이미지인 경우: 스티커의 실제 색상을 직접 확인
+   - 초록색, 노란색, 빨간색 중 하나
 
-### 필수 요구사항
+2. 이미지가 흑백인 경우, DANGER 경고 스티커를 기준으로 색상을 판별:
+   - DANGER 스티커에는 빨간색 영역(어두운 회색)과 노란색 번개 마크(중간 밝기)가 있습니다
+   - 원형 스티커가 DANGER의 빨간색 영역과 비슷한 밝기 → 빨간색
+   - 원형 스티커가 DANGER의 노란색 번개와 비슷한 밝기 → 노란색
+   - 원형 스티커가 둘 다보다 밝음 (가장 연한 회색) → 초록색
 
-- Python 3.8 이상
-- pip
+[숫자 인식 주의사항]
+- 손글씨 숫자는 보통 3자리입니다
+- 숫자 '1'은 세로 막대 형태로, 밑줄과 구분해주세요
+- 밑줄은 숫자의 일부가 아닙니다
 
-### 가상환경 설정
+다음 JSON 형식으로만 답변해주세요:
+{
+    "has_sticker": true/false,
+    "number": "숫자" 또는 null,
+    "color": "초록색"/"노란색"/"빨간색" 또는 null
+}
+```
+
+### 챗봇 시스템 프롬프트
+
+```
+당신은 모터 부품 품질 검사 시스템의 AI 어시스턴트입니다.
+사용자가 분석 결과에 대해 질문하면, 제공된 데이터를 바탕으로 명확하고 간결하게 답변해주세요.
+
+역할:
+- 불량품 현황과 통계를 요약해드립니다
+- 품질 트렌드를 분석해드립니다
+- 개선이 필요한 부분을 파악해드립니다
+```
+
+---
+
+## Test Results
+
+### 1. 모델 전환 테스트 (OpenAI GPT-4o → Qwen)
+
+| 항목 | 결과 |
+|------|------|
+| **기존 GPT-4o 인식** | 213 → 273으로 잘못 인식 |
+| **Qwen 인식** | 273으로 정확히 인식 |
+| **원인 분석** | 원본 파일 확인 결과, 273이 정답 (GPT-4o가 오류) |
+
+**결론**: Qwen 모델이 기존 GPT-4o보다 숫자 인식 정확도가 높음
+
+### 2. 프롬프트 최적화 테스트
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **169 인식** | 69 (오류) | 169 (정확) |
+| **원인** | 숫자 '1'을 밑줄로 오인 | 3자리 숫자 힌트 + 밑줄 구분 명시 |
+
+### 3. 흑백 이미지 테스트
+
+- **초기 접근 (실패)**: RGB 값 차이로 색상 판별 시도 → 밝기만으로 색상 구분 불가
+- **개선된 접근**: DANGER 스티커 기준 상대적 밝기 비교
+- **결과**: 정확도 대폭 향상 (미해결 케이스 2건)
+
+### 4. 가우시안 블러 테스트
+
+| 항목 | 결과 |
+|------|------|
+| **전체 정확도** | 대부분 성공 |
+| **실패 케이스** | 1건 (심하게 흐린 이미지) |
+| **실패 원인** | 블러가 과도하여 숫자 판독 불가 |
+| **해결 가능성** | 해결 불가 (물리적 한계) |
+
+**결론**: 적당한 수준의 블러는 모델이 처리 가능하나, 과도한 블러는 한계
+
+---
+
+## Dashboard Comparison
+
+| 항목 | 기존 | 개선 후 |
+|------|------|---------|
+| **통계 카드** | 없음 | 4개 (총 이미지/정상/경미/심각) |
+| **결과 테이블** | 최근 20개 | 최근 20개 + 실시간 업데이트 |
+| **새로고침** | 없음 | 버튼 제공 |
+| **데이터 삭제** | 없음 | 전체 삭제 기능 |
+| **CSV 내보내기** | 없음 | 전체 결과 다운로드 |
+| **AI 챗봇** | 없음 | 분석 데이터 기반 질의응답 |
+
+---
+
+## Tech Stack
+
+| 계층 | 기술 |
+|------|------|
+| **Web Framework** | FastAPI |
+| **UI** | Gradio |
+| **Vision AI** | Qwen/vLLM (OpenAI Compatible API) |
+| **이미지 처리** | Pillow, OpenCV |
+| **모니터링** | LangSmith |
+| **HTTP Client** | requests, tqdm |
+| **Environment** | python-dotenv |
+
+---
+
+## Installation
+
+### 1. vLLM 서버 설정 (GPU 환경)
 
 ```bash
-# 프로젝트 루트에서
-python3 -m venv venv
+# vLLM 및 의존성 설치
+pip install vllm hf_transfer
 
-# 활성화
-source venv/bin/activate  # macOS/Linux
-venv\Scripts\activate     # Windows
+# Qwen Vision 모델 서빙 시작
+vllm serve Qwen/Qwen3-VL-8B-Instruct --max-model-len 65536
 ```
 
-### Vision Model API 설정
+### 2. 학생 서버 설치
 
-GPU 서버에서 OpenAI compatible API를 호스팅해야 합니다.
+```bash
+cd student_template
+pip install fastapi uvicorn gradio openai langsmith pillow python-dotenv
+```
 
-**추천 프레임워크:**
-- vLLM
+### 3. 환경 변수 설정 (.env)
 
-## 테스트 가이드
+```
+API_BASE_URL=http://localhost:8000/v1    # vLLM 서버 주소
+API_KEY=your-api-key
+MODEL_NAME=Qwen/Qwen3-VL-8B-Instruct
+LANGSMITH_API_KEY=your-langsmith-key     # 선택사항
+LANGSMITH_PROJECT=motor-sticker-detection
+```
 
-### 로컬 테스트 (단일 학생)
+### 4. 서버 실행
 
-1. **학생 서버 실행**
-   ```bash
-   cd student_template
-   python app.py
-   ```
+```bash
+cd student_template
+python app.py
+```
 
-2. **헬스체크**
-   ```bash
-   curl http://localhost:8000/
-   ```
+- API 서버: `http://localhost:8001`
+- Dashboard: `http://localhost:7860`
 
-3. **이미지 전송**
-   ```bash
-   curl -X POST http://localhost:8000/analyze \
-     -F "file=@test_image.jpg"
-   ```
+---
 
-4. **대시보드 확인**
-   - 브라우저에서 `http://localhost:7860` 접속
-   - 새로고침 버튼 클릭
-
-### 전체 테스트 (여러 학생)
-
-1. **학생 API 목록 작성**
-   ```bash
-   cd teacher_tools
-   # student_apis.json 편집
-   ```
-
-2. **기본 테스트 (3개 이미지)**
-   ```bash
-   python image_sender.py --limit 3
-   ```
-
-3. **전체 이미지 전송**
-   ```bash
-   python image_sender.py
-   ```
-
-4. **병렬 전송 테스트**
-   ```bash
-   python image_sender.py --parallel
-   ```
-
-## 채점 기준
-
-### 기본 기능 (70점)
-
-1. **서버 실행** (15점)
-   - FastAPI 서버가 정상 실행
-   - 헬스체크 엔드포인트 응답
-
-2. **이미지 분석** (30점)
-   - POST /analyze 엔드포인트 구현
-   - Vision Model API 연동
-   - 스티커 정보 추출
-   - 불량 수준 판정
-   - 올바른 JSON 응답
-
-3. **데이터 저장** (15점)
-   - JSON 파일에 결과 저장
-   - 올바른 데이터 구조
-   - 동시성 처리
-
-4. **대시보드** (10점)
-   - Gradio 대시보드 실행
-   - 통계 표시
-   - 결과 테이블 표시
-   - 새로고침 기능
-
-### 추가 기능 (30점)
-
-- 에러 처리 (10점)
-- 코드 품질 및 주석 (10점)
-- 문서화 (5점)
-- UI/UX 개선 (5점)
-
-## 트러블슈팅
-
-### 학생 측 문제
-
-**문제: Vision Model API 연결 실패**
-- `.env` 파일 확인
-- API 주소와 키 검증
-- 네트워크 연결 확인
-
-**문제: 포트 충돌**
-- `.env`에서 포트 변경
-- 기존 프로세스 종료
-
-**문제: 패키지 설치 오류**
-- Python 버전 확인 (3.8+)
-- pip 업그레이드
-- 가상환경 재생성
-
-### 교수자 측 문제
-
-**문제: 학생 서버 연결 실패**
-- 학생 서버 실행 상태 확인
-- API URL 정확성 확인
-- 방화벽/네트워크 설정
-
-**문제: 타임아웃**
-- `--timeout` 값 증가
-- Vision Model API 상태 확인
-
-## 확장 아이디어
-
-### 학생 프로젝트
-
-- [ ] 데이터베이스 연동 (SQLite/PostgreSQL)
-- [ ] 사용자 인증 및 권한 관리
-- [ ] 이미지 썸네일 표시
-- [ ] 실시간 차트/그래프
-- [ ] WebSocket 실시간 업데이트
-- [ ] 필터링 및 검색 기능
-- [ ] CSV/Excel 내보내기
-- [ ] Docker 컨테이너화
-
-
-## 라이선스
+## License
 
 이 프로젝트는 교육 목적으로 사용됩니다.
 
-## 참고 자료
+---
 
-- [FastAPI 공식 문서](https://fastapi.tiangolo.com/)
-- [Gradio 공식 문서](https://gradio.app/docs/)
-- [OpenAI API 문서](https://platform.openai.com/docs/)
-- [vLLM 문서](https://docs.vllm.ai/)
+## References
+
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Gradio Documentation](https://gradio.app/docs/)
+- [vLLM Documentation](https://docs.vllm.ai/)
+- [Qwen Model](https://huggingface.co/Qwen)
