@@ -1,11 +1,16 @@
 """
-백그라운드 이미지 분석 워커 (LangSmith 통합)
+백그라운드 이미지 분석 워커 (DeepSeek-OCR vLLM API 통합)
 
 3개씩 이미지를 그룹으로 묶어 분석하고,
 스티커가 있는 이미지를 찾아 불량 수준을 판정합니다.
+
+DeepSeek-OCR은 원격 vLLM 서버에서 실행되며,
+로컬에서는 API 호출만 수행합니다.
 """
+import base64
 import json
 import os
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -20,7 +25,6 @@ from models import (
     file_lock,
     load_results,
     load_results_unsafe,
-    encode_image,
     determine_defect_level
 )
 
@@ -33,19 +37,24 @@ if config.LANGSMITH_TRACING and config.LANGSMITH_API_KEY:
     print(f"[LangSmith] 추적 활성화: {config.LANGSMITH_PROJECT}")
 
 
-# OpenAI 클라이언트 생성
+# DeepSeek-OCR vLLM API 클라이언트
+deepseek_client = OpenAI(
+    base_url=config.DEEPSEEK_API_BASE_URL,
+    api_key=config.DEEPSEEK_API_KEY
+)
+
+# OpenAI 클라이언트 생성 (챗봇용)
 if config.API_BASE_URL == "https://api.openai.com/v1":
-    client = OpenAI(api_key=config.API_KEY)
+    openai_client = OpenAI(api_key=config.API_KEY)
 else:
-    # 커스텀 GPU 서버를 사용할 때만 base_url 설정
-    client = OpenAI(
+    openai_client = OpenAI(
         base_url=config.API_BASE_URL,
         api_key=config.API_KEY
     )
 
 # LangSmith 래핑 (추적 활성화시)
 if config.LANGSMITH_TRACING and config.LANGSMITH_API_KEY:
-    client = wrap_openai(client)
+    openai_client = wrap_openai(openai_client)
     print("[LangSmith] OpenAI 클라이언트 래핑 완료")
 
 
@@ -53,27 +62,292 @@ if config.LANGSMITH_TRACING and config.LANGSMITH_API_KEY:
 image_queue = Queue()
 
 
+def parse_sticker_info(ocr_result: str) -> dict:
+    """
+    DeepSeek-OCR 결과에서 스티커 정보 추출 (JSON 형식 지원)
+
+    Args:
+        ocr_result: OCR 결과 텍스트 (JSON 또는 일반 텍스트)
+
+    Returns:
+        스티커 정보 딕셔너리 {has_sticker, number, color, is_irrelevant}
+    """
+    result = {
+        "has_sticker": False,
+        "number": None,
+        "color": None,
+        "is_irrelevant": False  # 관련없는 이미지 플래그
+    }
+
+    # JSON 파싱 시도
+    try:
+        # ```json ... ``` 블록 추출
+        if "```json" in ocr_result:
+            json_text = ocr_result.split("```json")[1].split("```")[0].strip()
+        elif "```" in ocr_result:
+            json_text = ocr_result.split("```")[1].split("```")[0].strip()
+        else:
+            json_text = ocr_result.strip()
+
+        parsed = json.loads(json_text)
+
+        # status 확인
+        status = parsed.get("status", "")
+        if "관련없는" in status:
+            result["is_irrelevant"] = True
+            return result
+        elif "스티커_없음" in status or "없음" in status:
+            return result
+
+        # sticker_info 파싱
+        sticker_info = parsed.get("sticker_info", {})
+        if sticker_info.get("detected", False):
+            result["has_sticker"] = True
+
+            # 색상 매핑
+            color = sticker_info.get("color", "")
+            color_mapping = {
+                "초록": "초록색",
+                "녹색": "초록색",
+                "green": "초록색",
+                "노랑": "노란색",
+                "황색": "노란색",
+                "yellow": "노란색",
+                "빨강": "빨간색",
+                "적색": "빨간색",
+                "red": "빨간색",
+                "판단불가": "판단불가"
+            }
+            result["color"] = color_mapping.get(color.lower() if color else "", color)
+
+            # 숫자 추출
+            number = sticker_info.get("number", "")
+            if number and number != "인식불가":
+                # 숫자만 추출
+                num_match = re.search(r'(\d{3})', str(number))
+                if num_match:
+                    result["number"] = num_match.group(1)
+
+        return result
+
+    except (json.JSONDecodeError, IndexError, KeyError):
+        # JSON 파싱 실패 시 기존 텍스트 파싱 방식 사용
+        pass
+
+    ocr_lower = ocr_result.lower()
+
+    # 관련없는 이미지 체크
+    irrelevant_keywords = ["관련없는_이미지", "관련없는 이미지", "관련 없는 이미지", "irrelevant", "not relevant"]
+    for keyword in irrelevant_keywords:
+        if keyword in ocr_lower:
+            result["is_irrelevant"] = True
+            return result
+
+    # 스티커 없음 체크
+    if "스티커_없음" in ocr_result or "스티커 없음" in ocr_lower:
+        return result
+
+    # 색상 감지
+    color_mapping = {
+        "초록색": "초록색",
+        "초록": "초록색",
+        "녹색": "초록색",
+        "green": "초록색",
+        "노란색": "노란색",
+        "노랑": "노란색",
+        "황색": "노란색",
+        "yellow": "노란색",
+        "빨간색": "빨간색",
+        "빨강": "빨간색",
+        "적색": "빨간색",
+        "red": "빨간색",
+        "판단불가": "판단불가",
+        "판단 불가": "판단불가"
+    }
+
+    for keyword, color in color_mapping.items():
+        if keyword in ocr_lower:
+            result["color"] = color
+            if color != "판단불가":
+                result["has_sticker"] = True
+            break
+
+    # 숫자 추출 - 3자리 숫자 찾기
+    numbers = re.findall(r'\b(\d{3})\b', ocr_result)
+    if numbers:
+        result["number"] = numbers[0]
+        result["has_sticker"] = True
+
+    # "정상_처리"가 있으면 스티커 있음
+    if "정상_처리" in ocr_result:
+        result["has_sticker"] = True
+
+    return result
+
+
+def encode_image_base64(image_path: Path) -> str:
+    """이미지를 base64로 인코딩"""
+    with open(image_path, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+
+
 @traceable(
-    name="analyze_sticker",
+    name="analyze_sticker_deepseek",
     run_type="llm",
     metadata={
         "component": "vision_analysis",
-        "model": config.MODEL_NAME,
-        "provider": "runpod" if "runpod" in config.API_BASE_URL else "openai"
+        "model": "DeepSeek-OCR",
+        "provider": "vllm"
     }
 )
-def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
+def analyze_sticker_deepseek(image_path: Path, max_retries: int = 3) -> dict:
     """
-    Vision Model API를 사용하여 이미지에서 스티커 정보 추출
-    (LangSmith 추적 포함, 재시도 로직 포함)
+    DeepSeek-OCR vLLM API를 사용하여 이미지에서 스티커 정보 추출
+
+    원격 vLLM 서버에서 DeepSeek-OCR 모델이 실행되며,
+    OpenAI 호환 API를 통해 호출합니다.
 
     Args:
         image_path: 분석할 이미지 경로
-        max_retries: 최대 재시도 횟수 (502 오류 등 일시적 오류 대응)
+        max_retries: 최대 재시도 횟수
 
     Returns:
         스티커 정보 딕셔너리 {has_sticker, number, color}
     """
+    # 이미지를 base64로 인코딩
+    base64_image = encode_image_base64(image_path)
+
+    # 디버깅 모드 확인
+    debug_mode = os.getenv("DEBUG_PROMPT", "false").lower() == "true"
+
+    if debug_mode:
+        # 디버깅용 프롬프트 - 모델이 이미지를 어떻게 보는지 확인
+        prompt = """당신은 시각 정보 분석 전문가입니다. 주어진 이미지를 있는 그대로 자세히 묘사해야 합니다.
+
+다음 순서대로 답변해 주세요:
+1. **이미지 전체 설명**: 이 이미지는 무엇을 찍은 사진입니까? (예: 금속 기계 부품, 책상 위, 어두운 배경 등)
+2. **색상 탐지**: 이미지 안에 '초록색', '노란색', '빨간색'으로 된 물체가 있습니까? 있다면 위치와 모양을 설명하세요.
+3. **텍스트 탐지**: 이미지 안에 글자나 숫자가 보입니까? 인쇄된 글자와 손으로 쓴 글씨를 구분해서 보이는 대로 다 적어보세요.
+4. **스티커 확인**: 부품 위에 붙어 있는 '동그란 스티커'가 보입니까?
+
+제약 조건:
+- JSON 형식이 아니라, 줄글로 자세히 설명하세요.
+- 판단이 어려우면 "잘 안 보임"이라고 솔직하게 말하세요.
+"""
+    else:
+        # 실제 분석용 프롬프트
+        prompt = """당신은 자동차 모터 부품의 품질 관리를 담당하는 **AI 비전 검사관**입니다.
+제공된 이미지에서 **품질 검사 확인용 원형 스티커**를 찾아 그 정보를 추출하는 것이 당신의 목표입니다.
+
+## 1. 단계별 분석 절차 (이 순서대로 생각하고 판단하세요)
+1. **이미지 적합성 판단**:
+   - 이미지가 모터 부품이 아닌 경우(사람, 풍경, 동물 등) 즉시 중단합니다.
+   - 이미지가 실제 사물이 아닌 모니터 화면을 찍은 것(무아레 패턴, 베젤 보임)인지 확인합니다.
+2. **스티커 탐지**:
+   - 부품 표면에 부착된 **'동그란 원형'** 스티커를 찾으세요. (사각형 바코드나 경고 라벨은 무시)
+   - 스티커는 보통 초록, 노랑, 빨강 중 하나의 색상입니다.
+3. **텍스트 인식 (OCR)**:
+   - 스티커 내부에 **손글씨(매직/펜)**로 적힌 3자리 숫자를 찾으세요.
+   - 글자가 기울어지거나 흐릿할 수 있습니다. 주변의 인쇄된 텍스트(부품 번호 등)와 혼동하지 마세요.
+4. **색상 판별**:
+   - 스티커 배경색을 확인하세요. 흑백 이미지라면 '판단불가'로 처리하세요.
+
+## 2. 제약 조건
+- 숫자가 3자리가 아니거나 명확하지 않으면 가장 유력한 숫자를 적되, 확신이 없으면 "인식불가"라고 하세요.
+- 원형 스티커가 없으면 결과는 무조건 "없음"입니다.
+
+## 3. 답변 출력 형식 (JSON)
+분석이 끝나면 오직 아래의 JSON 형식으로만 답변을 출력하세요. 다른 설명은 포함하지 마세요.
+
+```json
+{
+  "status": "정상_처리" OR "관련없는_이미지" OR "스티커_없음",
+  "sticker_info": {
+    "detected": true/false,
+    "color": "초록" OR "노랑" OR "빨강" OR "판단불가",
+    "number": "숫자(문자열)" OR "인식불가"
+  },
+  "reasoning": "판단 이유를 한 문장으로 요약 (예: 원형 스티커가 발견되었고 102가 적혀있음)"
+}
+```
+"""
+
+    last_error = None
+
+    for attempt in range(max_retries):
+        try:
+            # vLLM OpenAI 호환 API 호출
+            response = deepseek_client.chat.completions.create(
+                model=config.DEEPSEEK_OCR_MODEL,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=500,
+                temperature=0.0
+            )
+
+            result = response.choices[0].message.content.strip()
+            print(f"[DEBUG] DeepSeek-OCR 결과: {result}")
+
+            # 결과 파싱
+            sticker_info = parse_sticker_info(str(result))
+
+            # JSON 형식 응답 시도 (모델이 JSON으로 답변한 경우)
+            try:
+                if "```json" in result:
+                    json_text = result.split("```json")[1].split("```")[0].strip()
+                    parsed = json.loads(json_text)
+                    if "has_sticker" in parsed:
+                        return parsed
+            except:
+                pass
+
+            return sticker_info
+
+        except Exception as e:
+            last_error = e
+
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2
+                print(f"[재시도 {attempt + 1}/{max_retries}] 오류 발생, {wait_time}초 후 재시도...")
+                print(f"  오류: {e}")
+                time.sleep(wait_time)
+                continue
+            break
+
+    import traceback
+    print(f"분석 오류: {last_error}")
+    print(f"상세 오류:\n{traceback.format_exc()}")
+    return {"has_sticker": False, "number": None, "color": None, "error": str(last_error)}
+
+
+# 기존 OpenAI 기반 분석 함수 (폴백용)
+@traceable(
+    name="analyze_sticker_openai",
+    run_type="llm",
+    metadata={
+        "component": "vision_analysis",
+        "model": config.MODEL_NAME,
+        "provider": "openai"
+    }
+)
+def analyze_sticker_openai(image_path: Path, max_retries: int = 3) -> dict:
+    """OpenAI Vision API를 사용한 스티커 분석 (폴백용)"""
+    from models import encode_image
     base64_image = encode_image(image_path)
 
     prompt = """
@@ -82,24 +356,6 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
     [스티커 특징]
     - 원형의 색깔 스티커 (초록색, 노란색, 또는 빨간색)
     - 스티커 위에 손글씨로 쓰여진 3자리 숫자 (예: 102, 169, 213 등)
-    - 숫자 아래에 밑줄이 그어져 있을 수 있음 (밑줄은 숫자가 아님)
-
-    [색상 판별 방법]
-    1. 컬러 이미지인 경우: 스티커의 실제 색상을 직접 확인
-       - 초록색, 노란색, 빨간색 중 하나
-
-    2. 이미지가 흑백인 경우, DANGER 경고 스티커를 기준으로 색상을 판별하세요:
-    - DANGER 스티커에는 빨간색 영역(어두운 회색)과 노란색 번개 마크(중간 밝기)가 있습니다
-    - 이 기준과 비교하여    [흑백 이미지에서 색상 판별 방법 - 중요!] 원형 스티커의 색상을 판단:
-      * 원형 스티커가 DANGER의 빨간색 영역과 비슷한 밝기 → 빨간색
-      * 원형 스티커가 DANGER의 노란색 번개와 비슷한 밝기 → 노란색
-      * 원형 스티커가 둘 다보다 밝음 (가장 연한 회색) → 초록색
-    3. 스티커가 보이지 않거나 색상을 판별할 수 없으면 null로 설정하세요
-      
-    [숫자 인식 주의사항]
-    - 손글씨 숫자는 보통 3자리입니다
-    - 숫자 '1'은 세로 막대 형태로, 밑줄과 구분해주세요
-    - 밑줄은 숫자의 일부가 아닙니다
 
     다음 JSON 형식으로만 답변해주세요:
     {
@@ -113,7 +369,7 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
 
     for attempt in range(max_retries):
         try:
-            response = client.chat.completions.create(
+            response = openai_client.chat.completions.create(
                 model=config.MODEL_NAME,
                 messages=[
                     {
@@ -123,15 +379,10 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
                     {
                         "role": "user",
                         "content": [
-                            {
-                                "type": "text",
-                                "text": prompt
-                            },
+                            {"type": "text", "text": prompt},
                             {
                                 "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{base64_image}"
-                                }
+                                "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
                             }
                         ]
                     }
@@ -141,15 +392,12 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
             )
 
             result_text = response.choices[0].message.content.strip()
-            print(f"[DEBUG] API 응답: {result_text}")
 
-            # Qwen 모델의 <think> 태그 제거 (thinking 모드 응답 처리)
             if "<think>" in result_text and "</think>" in result_text:
                 result_text = result_text.split("</think>")[-1].strip()
 
             if "```json" in result_text:
-                result_text = result_text.split(
-                    "```json")[1].split("```")[0].strip()
+                result_text = result_text.split("```json")[1].split("```")[0].strip()
             elif "```" in result_text:
                 result_text = result_text.split("```")[1].strip()
 
@@ -158,24 +406,29 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
 
         except Exception as e:
             last_error = e
-            error_str = str(e).lower()
-
-            # 502 Bad Gateway 또는 서버 오류인 경우 재시도
-            if "502" in error_str or "bad gateway" in error_str or "500" in error_str or "503" in error_str:
-                if attempt < max_retries - 1:
-                    wait_time = (attempt + 1) * 2  # 2초, 4초, 6초...
-                    print(
-                        f"[재시도 {attempt + 1}/{max_retries}] 서버 오류 발생, {wait_time}초 후 재시도...")
-                    time.sleep(wait_time)
-                    continue
-
-            # 다른 오류는 바로 종료
+            if attempt < max_retries - 1:
+                time.sleep((attempt + 1) * 2)
+                continue
             break
 
-    import traceback
-    print(f"분석 오류: {last_error}")
-    print(f"상세 오류:\n{traceback.format_exc()}")
     return {"has_sticker": False, "number": None, "color": None, "error": str(last_error)}
+
+
+def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
+    """
+    설정에 따라 적절한 OCR 엔진으로 스티커 분석
+
+    Args:
+        image_path: 분석할 이미지 경로
+        max_retries: 최대 재시도 횟수
+
+    Returns:
+        스티커 정보 딕셔너리
+    """
+    if config.OCR_ENGINE == "deepseek":
+        return analyze_sticker_deepseek(image_path, max_retries)
+    else:
+        return analyze_sticker_openai(image_path, max_retries)
 
 
 @traceable(
@@ -183,8 +436,7 @@ def analyze_sticker(image_path: Path, max_retries: int = 3) -> dict:
     run_type="chain",
     metadata={
         "component": "group_analysis",
-        "model": config.MODEL_NAME,
-        "provider": "runpod" if "runpod" in config.API_BASE_URL else "openai"
+        "ocr_engine": config.OCR_ENGINE
     }
 )
 def analyze_image_group(images: list) -> dict:
@@ -203,33 +455,53 @@ def analyze_image_group(images: list) -> dict:
         data = load_results_unsafe()
         group_id = len(data.get("groups", [])) + 1
 
-    print(f"\n[그룹 {group_id} 분석 시작] 이미지 {len(images)}개")
+    print(f"\n[그룹 {group_id} 분석 시작] 이미지 {len(images)}개 (엔진: {config.OCR_ENGINE})")
 
     results = []
+    valid_results = []  # 관련있는 이미지만 저장
     sticker_found = None
+    skipped_count = 0  # 스킵된 이미지 수
 
-    # 각 이미지 분석 (LangSmith가 자동으로 추적)
+    # 각 이미지 분석
     for idx, img_info in enumerate(images):
         print(f"  이미지 {idx+1}/{len(images)}: {img_info['filename']} 분석 중...")
 
         try:
             sticker_info = analyze_sticker(Path(img_info['path']))
 
-            if sticker_info["has_sticker"]:
-                sticker_found = {
-                    "filename": img_info['filename'],
-                    "number": sticker_info.get("number"),
-                    "color": sticker_info.get("color")
-                }
-                print(
-                    f"    ✓ 스티커 발견! (번호: {sticker_info.get('number')}, 색: {sticker_info.get('color')})")
+            # 관련없는 이미지는 스킵
+            if sticker_info.get("is_irrelevant", False):
+                print(f"    ⊘ 관련없는 이미지 - 그룹에서 제외")
+                skipped_count += 1
+                continue
 
-            results.append({
+            if sticker_info["has_sticker"]:
+                # 그룹당 스티커는 1개만 존재 - 이미 찾았으면 무시
+                if sticker_found is None:
+                    sticker_found = {
+                        "filename": img_info['filename'],
+                        "number": sticker_info.get("number"),
+                        "color": sticker_info.get("color")
+                    }
+                    print(
+                        f"    ✓ 스티커 발견! (번호: {sticker_info.get('number')}, 색: {sticker_info.get('color')})")
+                else:
+                    # 이미 스티커를 찾았으므로 이 이미지는 스티커 없음으로 처리
+                    print(f"    ⚠ 스티커 중복 감지 - 첫 번째 스티커만 사용 (이 이미지는 무시)")
+                    sticker_info["has_sticker"] = False
+                    sticker_info["number"] = None
+                    sticker_info["color"] = None
+            else:
+                print(f"    ✗ 스티커 없음")
+
+            result_item = {
                 "filename": img_info['filename'],
                 "has_sticker": sticker_info["has_sticker"],
                 "sticker_number": sticker_info.get("number"),
                 "sticker_color": sticker_info.get("color")
-            })
+            }
+            results.append(result_item)
+            valid_results.append(result_item)
 
         except Exception as e:
             print(f"    ✗ 분석 오류: {e}")
@@ -239,14 +511,32 @@ def analyze_image_group(images: list) -> dict:
                 "error": str(e)
             })
 
+    # 스킵된 이미지 로그
+    if skipped_count > 0:
+        print(f"  [정보] {skipped_count}개 이미지가 관련없는 이미지로 제외됨")
+
+    # 유효한 이미지가 없으면 그룹 생성 안함
+    if len(valid_results) == 0:
+        print(f"[그룹 {group_id} 스킵] 유효한 이미지가 없음")
+        return None
+
+    # 불량 수준 결정 (판단불가인 경우 "미확인"으로)
+    defect_level = None
+    if sticker_found:
+        if sticker_found.get("color") == "판단불가":
+            defect_level = "미확인"
+        else:
+            defect_level = determine_defect_level(sticker_found["color"])
+
     # 그룹 결과 구성
     group_result = {
         "group_id": group_id,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "images": results,
+        "images": valid_results,  # 유효한 이미지만 저장
+        "skipped_images": skipped_count,
         "sticker_info": sticker_found,
-        "defect_level": determine_defect_level(sticker_found["color"]) if sticker_found else None,
-        "status": "정상" if len(results) == 3 and sticker_found else "오류"
+        "defect_level": defect_level,
+        "status": "정상" if sticker_found else "스티커 미발견"
     }
 
     # 결과 저장
@@ -256,9 +546,8 @@ def analyze_image_group(images: list) -> dict:
             if "groups" not in data:
                 data["groups"] = []
             data["groups"].append(group_result)
-            data["total_images"] = data.get("total_images", 0) + len(images)
+            data["total_images"] = data.get("total_images", 0) + len(valid_results)  # 유효한 이미지만 카운트
 
-            # 개별 이미지 결과도 저장 (대시보드 호환성)
             if "results" not in data:
                 data["results"] = []
 
@@ -295,7 +584,7 @@ def background_worker():
     큐에서 이미지를 가져와서 3개가 모이면 분석을 시작합니다.
     """
     import traceback
-    print("[워커 시작] 이미지 분석 백그라운드 워커 실행 중...")
+    print(f"[워커 시작] 이미지 분석 백그라운드 워커 실행 중... (OCR 엔진: {config.OCR_ENGINE})")
 
     pending_images = []
 
@@ -315,14 +604,12 @@ def background_worker():
                 pending_images = pending_images[3:]
 
                 try:
-                    # LangSmith가 자동으로 추적
                     analyze_image_group(group)
                 except Exception as analysis_error:
                     print(f"[워커 분석 오류] {analysis_error}")
                     print(traceback.format_exc())
 
         except Exception as e:
-            # 타임아웃은 정상 (큐가 비어있음)
             error_type = str(type(e).__name__)
             if "Empty" not in error_type:
                 print(f"[워커 큐 오류] {error_type}: {e}")
@@ -341,7 +628,7 @@ def background_worker():
 def chat_with_data(user_message: str) -> str:
     """
     분석 데이터를 기반으로 사용자 질문에 답변하는 챗봇
-    (vLLM/Qwen 모델 사용)
+    (OpenAI 호환 API 사용)
 
     Args:
         user_message: 사용자 질문
@@ -411,7 +698,7 @@ def chat_with_data(user_message: str) -> str:
 """
 
     try:
-        response = client.chat.completions.create(
+        response = openai_client.chat.completions.create(
             model=config.MODEL_NAME,
             messages=[
                 {
