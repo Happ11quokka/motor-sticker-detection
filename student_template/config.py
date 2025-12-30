@@ -2,7 +2,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# .env 파일 경로를 명시적으로 지정
+env_path = Path(__file__).parent / ".env"
+load_dotenv(env_path)
 
 # Vision Model API
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")

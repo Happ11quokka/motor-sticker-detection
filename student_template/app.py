@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import config
 from models import load_results, clear_results
-from worker import image_queue, background_worker, chat_with_data
+from worker import image_queue, background_worker, chat_with_data, reanalyze_image
 
 # 분석 상태 관리
 analysis_state = {
@@ -172,8 +172,11 @@ def get_dashboard_data():
     if not results:
         return [], {}, 0, 0, 0, 0
 
-    # 최근 20개 결과
-    recent_results = results[-20:][::-1]
+    # 스티커가 있는 결과만 필터링 (대시보드에는 스티커 확인된 것만 표시)
+    sticker_results = [r for r in results if r.get("has_sticker")]
+
+    # 최근 20개 결과 (스티커 있는 것만)
+    recent_results = sticker_results[-20:][::-1]
 
     table_data = []
     for r in recent_results:
@@ -181,17 +184,17 @@ def get_dashboard_data():
             r["id"],
             r["timestamp"],
             r["filename"],
-            "O" if r["has_sticker"] else "X",
+            "O",  # 스티커 있는 것만 표시하므로 항상 O
             r.get("sticker_number", "-"),
             r.get("sticker_color", "-"),
             r.get("defect_level", "-")
         ])
 
-    # 불량 수준별 통계
-    normal = sum(1 for r in results if r.get("defect_level") == "정상")
-    minor = sum(1 for r in results if r.get("defect_level") == "경미한 불량")
-    severe = sum(1 for r in results if r.get("defect_level") == "심각한 불량")
-    total = len(results)
+    # 불량 수준별 통계 (스티커 있는 것만)
+    normal = sum(1 for r in sticker_results if r.get("defect_level") == "정상")
+    minor = sum(1 for r in sticker_results if r.get("defect_level") == "경미한 불량")
+    severe = sum(1 for r in sticker_results if r.get("defect_level") == "심각한 불량")
+    total = len(sticker_results)  # 스티커 있는 것만 카운트
 
     stats = {
         "정상 (초록색)": normal,
@@ -393,6 +396,149 @@ def create_gradio_interface():
             inputs=[],
             outputs=[chatbot]
         )
+
+        # 미확인 항목 검토 섹션
+        gr.Markdown("---")
+        gr.Markdown("## 🔍 미확인 항목 검토")
+        gr.Markdown("스티커가 없거나 인식에 실패한 항목을 검토하고 재분석할 수 있습니다.")
+
+        with gr.Row():
+            review_refresh_btn = gr.Button("🔄 미확인 항목 불러오기", variant="primary")
+
+        # 미확인 항목 갤러리 (최대 6개씩 표시)
+        review_status = gr.Markdown("미확인 항목을 불러오려면 위 버튼을 클릭하세요.")
+
+        with gr.Row():
+            with gr.Column(scale=1):
+                review_img1 = gr.Image(label="이미지 1", visible=False, height=200)
+                review_info1 = gr.Markdown("", visible=False)
+                review_btn1 = gr.Button("재분석", visible=False, size="sm")
+                review_id1 = gr.State(value=None)
+
+            with gr.Column(scale=1):
+                review_img2 = gr.Image(label="이미지 2", visible=False, height=200)
+                review_info2 = gr.Markdown("", visible=False)
+                review_btn2 = gr.Button("재분석", visible=False, size="sm")
+                review_id2 = gr.State(value=None)
+
+            with gr.Column(scale=1):
+                review_img3 = gr.Image(label="이미지 3", visible=False, height=200)
+                review_info3 = gr.Markdown("", visible=False)
+                review_btn3 = gr.Button("재분석", visible=False, size="sm")
+                review_id3 = gr.State(value=None)
+
+        with gr.Row():
+            with gr.Column(scale=1):
+                review_img4 = gr.Image(label="이미지 4", visible=False, height=200)
+                review_info4 = gr.Markdown("", visible=False)
+                review_btn4 = gr.Button("재분석", visible=False, size="sm")
+                review_id4 = gr.State(value=None)
+
+            with gr.Column(scale=1):
+                review_img5 = gr.Image(label="이미지 5", visible=False, height=200)
+                review_info5 = gr.Markdown("", visible=False)
+                review_btn5 = gr.Button("재분석", visible=False, size="sm")
+                review_id5 = gr.State(value=None)
+
+            with gr.Column(scale=1):
+                review_img6 = gr.Image(label="이미지 6", visible=False, height=200)
+                review_info6 = gr.Markdown("", visible=False)
+                review_btn6 = gr.Button("재분석", visible=False, size="sm")
+                review_id6 = gr.State(value=None)
+
+        def get_unknown_items():
+            """미확인 항목 가져오기"""
+            data = load_results()
+            results = data.get("results", [])
+
+            # 미확인 항목 필터링 (스티커 없음 또는 색상 null)
+            unknown_items = [
+                r for r in results
+                if not r.get("has_sticker") or r.get("sticker_color") is None or r.get("defect_level") == "미확인"
+            ]
+
+            return unknown_items[-6:]  # 최근 6개만
+
+        def load_review_items():
+            """미확인 항목 UI 업데이트"""
+            items = get_unknown_items()
+
+            # 기본값 설정
+            outputs = []
+            status_text = f"**미확인 항목: {len(items)}개**" if items else "✅ 미확인 항목이 없습니다."
+
+            for i in range(6):
+                if i < len(items):
+                    item = items[i]
+                    filename = item.get("filename", "")
+                    file_path = config.UPLOAD_DIR / filename
+
+                    # 이미지 경로
+                    img_path = str(file_path) if file_path.exists() else None
+
+                    # 정보 텍스트
+                    info_text = f"""**ID: {item.get('id')}**
+- 파일: {filename[:30]}...
+- 번호: {item.get('sticker_number', '-')}
+- 색상: {item.get('sticker_color', '-')}
+- 상태: {item.get('defect_level', '미확인')}"""
+
+                    outputs.extend([
+                        gr.update(value=img_path, visible=True),  # 이미지
+                        gr.update(value=info_text, visible=True),  # 정보
+                        gr.update(visible=True),  # 버튼
+                        item.get('id')  # ID
+                    ])
+                else:
+                    outputs.extend([
+                        gr.update(value=None, visible=False),
+                        gr.update(value="", visible=False),
+                        gr.update(visible=False),
+                        None
+                    ])
+
+            return [status_text] + outputs
+
+        def do_reanalyze(item_id):
+            """단일 항목 재분석"""
+            if item_id is None:
+                return "ID가 없습니다."
+
+            result = reanalyze_image(item_id)
+
+            if result.get("success"):
+                new_info = result.get("new", {})
+                return f"""✅ **재분석 완료 (ID: {item_id})**
+- 번호: {new_info.get('number', '-')}
+- 색상: {new_info.get('color', '-')}
+- 불량수준: {new_info.get('defect_level', '-')}
+
+🔄 새로고침하여 결과를 확인하세요."""
+            else:
+                return f"❌ 재분석 실패: {result.get('message', '알 수 없는 오류')}"
+
+        # 미확인 항목 불러오기 버튼
+        review_refresh_btn.click(
+            fn=load_review_items,
+            inputs=[],
+            outputs=[
+                review_status,
+                review_img1, review_info1, review_btn1, review_id1,
+                review_img2, review_info2, review_btn2, review_id2,
+                review_img3, review_info3, review_btn3, review_id3,
+                review_img4, review_info4, review_btn4, review_id4,
+                review_img5, review_info5, review_btn5, review_id5,
+                review_img6, review_info6, review_btn6, review_id6,
+            ]
+        )
+
+        # 각 재분석 버튼 연결
+        review_btn1.click(fn=do_reanalyze, inputs=[review_id1], outputs=[review_status])
+        review_btn2.click(fn=do_reanalyze, inputs=[review_id2], outputs=[review_status])
+        review_btn3.click(fn=do_reanalyze, inputs=[review_id3], outputs=[review_status])
+        review_btn4.click(fn=do_reanalyze, inputs=[review_id4], outputs=[review_status])
+        review_btn5.click(fn=do_reanalyze, inputs=[review_id5], outputs=[review_status])
+        review_btn6.click(fn=do_reanalyze, inputs=[review_id6], outputs=[review_status])
 
     return demo
 
