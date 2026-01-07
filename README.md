@@ -1,4 +1,4 @@
-# Motor Sticker Detection System
+# Motor Sticker Detection AI Agentic System
 
 이미지에서 모터 스티커를 자동으로 검출하고 불량 여부를 판단하는 AI 기반 품질 검사 시스템입니다.
 
