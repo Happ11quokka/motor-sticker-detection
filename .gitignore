@@ -29,6 +29,15 @@ ENV/
 
 # Environment variables
 .env
+.env.*
+*.env
+.envrc
+
+# Secrets
+*.key
+*.pem
+*.p12
+*.pfx
 
 # IDE
 .vscode/

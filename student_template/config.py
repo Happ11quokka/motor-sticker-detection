@@ -8,7 +8,7 @@ load_dotenv(env_path)
 
 # Vision Model API
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-API_KEY = os.getenv("API_KEY", "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")
+API_KEY = os.getenv("API_KEY", "")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o")
 
 # Server Ports
