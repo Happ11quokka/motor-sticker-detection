@@ -32,7 +32,7 @@ def send_image(api_url: str, image_path: Path, timeout: int = config.DEFAULT_TIM
         with open(image_path, 'rb') as f:
             files = {'file': (image_path.name, f, 'image/jpeg')}
             response = requests.post(
-                f"{api_url}/upload",
+                f"{api_url}/api/upload",
                 files=files,
                 timeout=timeout
             )
@@ -71,7 +71,7 @@ def start_analysis(api_url: str, timeout: int = 30) -> Dict:
     """업로드 완료 후 분석 시작 요청"""
     try:
         response = requests.post(
-            f"{api_url}/start-analysis",
+            f"{api_url}/api/start-analysis",
             timeout=timeout
         )
         if response.status_code == 200:

@@ -319,9 +319,11 @@ def analyze_sticker_with_thinking(image_path: Path, max_retries: int = 3) -> dic
                 ],
                 max_tokens=8000,  # thinking 출력을 위해 증가
                 temperature=0.7,  # 더 창의적인 분석
-                extra_body={
-                    "chat_template_kwargs": {"enable_thinking": True}
-                }
+                extra_body=(
+                    {"chat_template_kwargs": {"enable_thinking": True}}
+                    if config.API_BASE_URL != "https://api.openai.com/v1"
+                    else None  # OpenAI는 chat_template_kwargs를 거부하므로 vLLM/Qwen 서버일 때만 전송
+                )
             )
 
             result_text = response.choices[0].message.content.strip()
