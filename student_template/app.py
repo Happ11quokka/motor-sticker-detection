@@ -20,6 +20,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 import config
+import showcase
 from models import load_results, clear_results
 from worker import image_queue, background_worker, chat_with_data, reanalyze_image
 
@@ -187,49 +188,18 @@ async def get_analysis_status():
 
 
 def get_dashboard_data():
-    """
-    대시보드에 표시할 데이터 가져오기
-
-    Returns:
-        테이블 데이터, 통계, 개수
-    """
+    """대시보드 표시 데이터: (행 dict 리스트, stats, total, normal, minor, severe)."""
     data = load_results()
-    results = data.get("results", [])
-
-    if not results:
+    rows = showcase.build_showcase_rows(data)
+    if not rows:
         return [], {}, 0, 0, 0, 0
 
-    # 스티커가 있는 결과만 필터링 (대시보드에는 스티커 확인된 것만 표시)
-    sticker_results = [r for r in results if r.get("has_sticker")]
-
-    # 최근 20개 결과 (스티커 있는 것만)
-    recent_results = sticker_results[-20:][::-1]
-
-    table_data = []
-    for r in recent_results:
-        table_data.append([
-            r["id"],
-            r["timestamp"],
-            r["filename"],
-            "O",  # 스티커 있는 것만 표시하므로 항상 O
-            r.get("sticker_number", "-"),
-            r.get("sticker_color", "-"),
-            r.get("defect_level", "-")
-        ])
-
-    # 불량 수준별 통계 (스티커 있는 것만)
-    normal = sum(1 for r in sticker_results if r.get("defect_level") == "정상")
-    minor = sum(1 for r in sticker_results if r.get("defect_level") == "경미한 불량")
-    severe = sum(1 for r in sticker_results if r.get("defect_level") == "심각한 불량")
-    total = len(sticker_results)  # 스티커 있는 것만 카운트
-
-    stats = {
-        "정상 (초록색)": normal,
-        "경미한 불량 (노란색)": minor,
-        "심각한 불량 (빨간색)": severe
-    }
-
-    return table_data, stats, total, normal, minor, severe
+    normal = sum(1 for r in rows if r["defect_level"] == "정상")
+    minor = sum(1 for r in rows if r["defect_level"] == "경미한 불량")
+    severe = sum(1 for r in rows if r["defect_level"] == "심각한 불량")
+    total = len(rows)
+    stats = {"정상 (초록색)": normal, "경미한 불량 (노란색)": minor, "심각한 불량 (빨간색)": severe}
+    return rows, stats, total, normal, minor, severe
 
 
 def _img_data_uri(filename: str, max_size: int, quality: int = 80) -> str:
@@ -249,87 +219,6 @@ def _img_data_uri(filename: str, max_size: int, quality: int = 80) -> str:
     except Exception as e:
         print(f"[썸네일 오류] {filename}: {e}")
         return ""
-
-
-_RESULTS_CSS = """
-<style>
-.res-wrap{overflow-x:auto}
-.res-tbl{border-collapse:collapse;width:100%;font-size:13px}
-.res-tbl th,.res-tbl td{border:1px solid #e5e7eb;padding:6px 8px;text-align:center;vertical-align:middle}
-.res-tbl th{background:#f9fafb;font-weight:600}
-.res-tbl td.fname{text-align:left;font-family:ui-monospace,monospace;font-size:11px;color:#374151}
-.res-thumb{width:36px;height:36px;object-fit:cover;border-radius:5px;border:1px solid #d1d5db;cursor:zoom-in;vertical-align:middle;margin-right:8px;transition:transform .12s}
-.res-thumb:hover{transform:scale(1.15)}
-.res-noimg{display:inline-block;width:36px;height:36px;border-radius:5px;background:#f3f4f6;color:#9ca3af;font-size:9px;line-height:36px;text-align:center;margin-right:8px;vertical-align:middle}
-.lb{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9999}
-.lb:target{display:flex}
-.lb img{max-width:92vw;max-height:90vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6)}
-.lb .lb-bg{position:absolute;inset:0}
-.lb .lb-x{position:absolute;top:14px;right:24px;color:#fff;font-size:36px;text-decoration:none;line-height:1}
-.lb .lb-cap{position:absolute;bottom:16px;left:0;right:0;text-align:center;color:#e5e7eb;font-size:13px}
-.badge{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:600;white-space:nowrap}
-.b-normal{background:#dcfce7;color:#166534}.b-minor{background:#fef9c3;color:#854d0e}.b-severe{background:#fee2e2;color:#991b1b}
-.cdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.15)}
-</style>
-"""
-
-
-def _badge(level: str) -> str:
-    cls = {"정상": "b-normal", "경미한 불량": "b-minor", "심각한 불량": "b-severe"}.get(level, "")
-    return f'<span class="badge {cls}">{level}</span>' if cls else (level or "-")
-
-
-def _color_cell(color: str) -> str:
-    hx = {"초록색": "#22c55e", "노란색": "#eab308", "빨간색": "#ef4444"}.get(color)
-    dot = f'<span class="cdot" style="background:{hx}"></span>' if hx else ""
-    return f'{dot}{color or "-"}'
-
-
-def render_results_html(rows) -> str:
-    """결과 행 리스트 → 썸네일 미리보기 + 클릭 확대(라이트박스) 포함 HTML 테이블."""
-    if not rows:
-        return _RESULTS_CSS + (
-            '<p style="color:#6b7280;padding:12px">아직 분석 결과가 없습니다. '
-            '이미지를 업로드하고 분석을 시작하세요.</p>'
-        )
-
-    body, boxes = [], []
-    for row in rows:
-        rid, ts, filename = row[0], row[1], row[2]
-        number = row[4] if row[4] not in (None, "") else "-"
-        color, defect = row[5], row[6]
-        thumb = _img_data_uri(filename, 40, 70)
-        big = _img_data_uri(filename, 1000, 82)
-        lb_id = f"lb{rid}"
-        if thumb:
-            thumb_html = (
-                f'<a href="#{lb_id}"><img class="res-thumb" src="{thumb}" title="클릭하여 확대"></a>'
-            )
-            boxes.append(
-                f'<div id="{lb_id}" class="lb">'
-                f'<a class="lb-bg" href="#_"></a>'
-                f'<a class="lb-x" href="#_">&times;</a>'
-                f'<img src="{big}">'
-                f'<div class="lb-cap">{filename} · 번호 {number} · {color or "-"} · {defect or "-"}</div>'
-                f'</div>'
-            )
-        else:
-            thumb_html = '<span class="res-noimg">없음</span>'
-        body.append(
-            f'<tr><td>{rid}</td><td>{ts}</td>'
-            f'<td class="fname">{thumb_html}{filename}</td>'
-            f'<td>O</td><td>{number}</td><td>{_color_cell(color)}</td>'
-            f'<td>{_badge(defect)}</td></tr>'
-        )
-
-    return (
-        _RESULTS_CSS
-        + '<div class="res-wrap"><table class="res-tbl">'
-        + '<thead><tr><th>ID</th><th>시간</th><th>미리보기 · 파일명</th>'
-        + '<th>스티커</th><th>번호</th><th>색상</th><th>불량 수준</th></tr></thead>'
-        + '<tbody>' + ''.join(body) + '</tbody></table></div>'
-        + ''.join(boxes)
-    )
 
 
 def export_results_to_csv():
@@ -431,12 +320,12 @@ def create_gradio_interface():
         csv_file = gr.File(label="다운로드 파일", visible=False)
 
         gr.Markdown("## 최근 분석 결과 (최대 20개)")
-        results_table = gr.HTML(value=render_results_html([]))
+        results_table = gr.HTML(value=showcase.render_results_html([], _img_data_uri))
 
         def update_dashboard():
             """대시보드 데이터 업데이트"""
             table_data, stats, total, normal, minor, severe = get_dashboard_data()
-            return render_results_html(table_data), total, normal, minor, severe
+            return showcase.render_results_html(table_data, _img_data_uri), total, normal, minor, severe
 
         def clear_and_update():
             """결과 삭제 후 대시보드 업데이트"""
