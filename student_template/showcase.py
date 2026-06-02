@@ -144,10 +144,20 @@ def render_results_html(rows, img_uri) -> str:
 
         if extras:
             items = []
-            for ex in extras:
-                ex_uri = img_uri(ex, 120, 75)
-                img_tag = (f'<img class="exp-thumb" src="{ex_uri}">' if ex_uri
-                           else '<span class="res-noimg">없음</span>')
+            for j, ex in enumerate(extras):
+                ex_thumb = img_uri(ex, 96, 75)
+                ex_big = img_uri(ex, 1000, 82)
+                if ex_thumb:
+                    lbe = f"lbe{rid}_{j}"
+                    img_tag = (f'<a href="#{lbe}"><img class="exp-thumb" src="{ex_thumb}" '
+                               f'title="클릭하여 확대"></a>')
+                    boxes.append(
+                        f'<div id="{lbe}" class="lb"><a class="lb-bg" href="#_"></a>'
+                        f'<a class="lb-x" href="#_">&times;</a><img src="{ex_big}">'
+                        f'<div class="lb-cap">{ex}</div></div>'
+                    )
+                else:
+                    img_tag = '<span class="res-noimg">없음</span>'
                 items.append(f'<span class="exp-item">{img_tag}<span class="exp-name">{ex}</span></span>')
             body.append(
                 f'<tr id="exp{rid}" class="exp-row"><td colspan="7"><div class="exp-wrap">'

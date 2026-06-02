@@ -88,3 +88,18 @@ def test_render_irrelevant_row_has_no_toggle_and_badge():
 def test_render_empty_shows_placeholder():
     html = showcase.render_results_html([], _stub_uri)
     assert "분석 결과가 없습니다" in html
+
+
+def test_expand_photos_are_clickable_lightboxes():
+    rows = [{
+        "id": 7, "timestamp": "t", "filename": "m.jpg", "has_sticker": True,
+        "number": "112", "color": "초록색", "defect_level": "정상",
+        "extra_photos": ["x1.jpg", "x2.jpg"],
+    }]
+    def ok(filename, max_size, quality=80):
+        return "data:image/jpeg;base64,AAAA"
+    html = showcase.render_results_html(rows, ok)
+    # 남은 사진 각각이 클릭 가능한 라이트박스(썸네일 + 확대 박스)로 렌더
+    assert 'href="#lbe7_0"' in html and 'id="lbe7_0"' in html
+    assert 'href="#lbe7_1"' in html and 'id="lbe7_1"' in html
+    assert html.count('class="exp-thumb"') == 2
