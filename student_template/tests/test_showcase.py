@@ -53,3 +53,38 @@ def test_non_showcase_falls_back_to_sticker_filter_reversed():
     }
     rows = showcase.build_showcase_rows(data)
     assert [r["id"] for r in rows] == [1]  # 무스티커 제외
+
+
+def _stub_uri(filename, max_size, quality=80):
+    return ""  # 이미지 없음 → 구조만 검증
+
+
+def test_render_sticker_row_has_toggle_and_expand_row():
+    rows = [{
+        "id": 7, "timestamp": "t", "filename": "m.jpg", "has_sticker": True,
+        "number": "112", "color": "초록색", "defect_level": "정상",
+        "extra_photos": ["x1.jpg", "x2.jpg"],
+    }]
+    html = showcase.render_results_html(rows, _stub_uri)
+    assert 'href="#exp7"' in html        # 토글 앵커
+    assert 'id="exp7"' in html           # 펼침 행
+    assert 'colspan="7"' in html         # 전체 폭
+    assert "x1.jpg" in html and "x2.jpg" in html
+    assert "b-normal" in html            # 정상 배지
+
+
+def test_render_irrelevant_row_has_no_toggle_and_badge():
+    rows = [{
+        "id": 9, "timestamp": "t", "filename": "junk.jpg", "has_sticker": False,
+        "number": "-", "color": "-", "defect_level": "관련없음", "extra_photos": [],
+    }]
+    html = showcase.render_results_html(rows, _stub_uri)
+    assert 'href="#exp9"' not in html    # 토글 없음
+    assert 'id="exp9"' not in html       # 펼침 행 없음
+    assert "b-irrelevant" in html        # 관련없음 배지
+    assert "관련없음" in html
+
+
+def test_render_empty_shows_placeholder():
+    html = showcase.render_results_html([], _stub_uri)
+    assert "분석 결과가 없습니다" in html
