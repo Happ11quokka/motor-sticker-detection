@@ -1,399 +1,32 @@
 {
-  "total_images": 52,
+  "total_images": 20,
+  "showcase": true,
   "groups": [
     {
       "group_id": 1,
-      "timestamp": "2026-06-01 21:57:26",
+      "timestamp": "2026-06-02 20:11:48",
       "images": [
         {
-          "filename": "20260601_215717_250175_0060060000413.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215717_261085_144641_150944_5814.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215717_280651_20240817_000105.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": null,
-      "defect_level": null,
-      "status": "오류"
-    },
-    {
-      "group_id": 2,
-      "timestamp": "2026-06-01 21:57:31",
-      "images": [
-        {
-          "filename": "20260601_215717_360218_20240817_000108.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215717_433060_20240817_000116.jpg",
-          "has_sticker": true,
-          "sticker_number": "102",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215717_515968_20240817_000136.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215717_433060_20240817_000116.jpg",
-        "number": "102",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 3,
-      "timestamp": "2026-06-01 21:57:36",
-      "images": [
-        {
-          "filename": "20260601_215717_590537_20240817_000138.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215717_665474_20240817_000148.jpg",
-          "has_sticker": true,
-          "sticker_number": "103",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215717_744446_20240817_000204.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215717_665474_20240817_000148.jpg",
-        "number": "103",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 4,
-      "timestamp": "2026-06-01 21:57:40",
-      "images": [
-        {
-          "filename": "20260601_215717_820911_20240817_000216.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215717_895374_20240817_000227.jpg",
-          "has_sticker": true,
-          "sticker_number": "104",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215717_971975_20240817_000238.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215717_895374_20240817_000227.jpg",
-        "number": "104",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 5,
-      "timestamp": "2026-06-01 21:57:45",
-      "images": [
-        {
-          "filename": "20260601_215718_050255_20240817_000241.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215718_131068_20240817_000249.jpg",
-          "has_sticker": true,
-          "sticker_number": "105",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215718_209401_20240817_000314.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215718_131068_20240817_000249.jpg",
-        "number": "105",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 6,
-      "timestamp": "2026-06-01 21:57:50",
-      "images": [
-        {
-          "filename": "20260601_215718_282668_20240817_000322.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215718_354867_20240817_000336.jpg",
-          "has_sticker": true,
-          "sticker_number": "169",
-          "sticker_color": "노란색"
-        },
-        {
-          "filename": "20260601_215718_432377_20240817_000350.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215718_354867_20240817_000336.jpg",
-        "number": "169",
-        "color": "노란색"
-      },
-      "defect_level": "경미한 불량",
-      "status": "정상"
-    },
-    {
-      "group_id": 7,
-      "timestamp": "2026-06-01 21:57:56",
-      "images": [
-        {
-          "filename": "20260601_215718_501793_20240817_000355.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215718_571190_20240817_000408.jpg",
-          "has_sticker": true,
-          "sticker_number": "106",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215718_651741_20240817_000431.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215718_571190_20240817_000408.jpg",
-        "number": "106",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 8,
-      "timestamp": "2026-06-01 21:58:01",
-      "images": [
-        {
-          "filename": "20260601_215718_727614_20240817_000433.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215718_806671_20240817_000444.jpg",
-          "has_sticker": true,
-          "sticker_number": "107",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215718_886726_20240817_000459.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215718_806671_20240817_000444.jpg",
-        "number": "107",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 9,
-      "timestamp": "2026-06-01 21:58:06",
-      "images": [
-        {
-          "filename": "20260601_215718_961898_20240817_000501.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215719_034773_20240817_000512.jpg",
-          "has_sticker": true,
-          "sticker_number": "108",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215719_113746_20240817_000546.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215719_034773_20240817_000512.jpg",
-        "number": "108",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 10,
-      "timestamp": "2026-06-01 21:58:10",
-      "images": [
-        {
-          "filename": "20260601_215719_185520_20240817_000552.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215719_259186_20240817_000625.jpg",
-          "has_sticker": true,
-          "sticker_number": "601",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215719_335225_20240817_000639.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215719_259186_20240817_000625.jpg",
-        "number": "601",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 11,
-      "timestamp": "2026-06-01 21:58:20",
-      "images": [
-        {
-          "filename": "20260601_215719_402240_20240817_000642.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215719_476870_20240817_000650.jpg",
-          "has_sticker": true,
-          "sticker_number": "110",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215719_552335_20240817_000707.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215719_476870_20240817_000650.jpg",
-        "number": "110",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 12,
-      "timestamp": "2026-06-01 21:58:31",
-      "images": [
-        {
-          "filename": "20260601_215719_628450_20240817_000710.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215719_705177_20240817_000717.jpg",
-          "has_sticker": true,
-          "sticker_number": "111",
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215719_782308_20240817_000731.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        }
-      ],
-      "sticker_info": {
-        "filename": "20260601_215719_705177_20240817_000717.jpg",
-        "number": "111",
-        "color": "초록색"
-      },
-      "defect_level": "정상",
-      "status": "정상"
-    },
-    {
-      "group_id": 13,
-      "timestamp": "2026-06-01 21:58:42",
-      "images": [
-        {
-          "filename": "20260601_215719_855659_20240817_000736.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215719_931859_20240817_000743.jpg",
+          "filename": "20260602_201148_001_20240817_000743.jpg",
           "has_sticker": true,
           "sticker_number": "112",
           "sticker_color": "초록색"
         },
         {
-          "filename": "20260601_215719_990673_20251204155106_6fd028fa5c224ae59d686bf814093547.jpg",
+          "filename": "20260602_201148_001_20240817_000736.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201148_001_20240817_000731.jpg",
           "has_sticker": false,
           "sticker_number": null,
           "sticker_color": null
         }
       ],
       "sticker_info": {
-        "filename": "20260601_215719_931859_20240817_000743.jpg",
+        "filename": "20260602_201148_001_20240817_000743.jpg",
         "number": "112",
         "color": "초록색"
       },
@@ -401,23 +34,11 @@
       "status": "정상"
     },
     {
-      "group_id": 14,
-      "timestamp": "2026-06-01 21:58:52",
+      "group_id": 2,
+      "timestamp": "2026-06-02 20:11:48",
       "images": [
         {
-          "filename": "20260601_215719_999177_30_5580879.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215720_024112_4711_number_sticker_d_08_02.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215720_028825_4711_number_sticker_d_09_02.jpg",
+          "filename": "20260602_201148_002_thumb_d_568043175A035B75FE0CBB82F6E4E084.jpg",
           "has_sticker": false,
           "sticker_number": null,
           "sticker_color": null
@@ -425,34 +46,374 @@
       ],
       "sticker_info": null,
       "defect_level": null,
-      "status": "오류"
+      "status": "관련없음"
     },
     {
-      "group_id": 15,
-      "timestamp": "2026-06-01 21:59:04",
+      "group_id": 3,
+      "timestamp": "2026-06-02 20:11:48",
       "images": [
         {
-          "filename": "20260601_215720_033655_50905_23441_3911.jpg",
+          "filename": "20260602_201148_003_20240817_000336.jpg",
+          "has_sticker": true,
+          "sticker_number": "169",
+          "sticker_color": "노란색"
+        },
+        {
+          "filename": "20260602_201148_003_20240817_000322.jpg",
           "has_sticker": false,
           "sticker_number": null,
           "sticker_color": null
         },
         {
-          "filename": "20260601_215720_036572_6281_60840_4125.jpg",
-          "has_sticker": true,
-          "sticker_number": null,
-          "sticker_color": "초록색"
-        },
-        {
-          "filename": "20260601_215720_043512_83d1f7dac6f9550513f615985f5e55a73df58ba3e36ab2858195d04b99a8.png",
+          "filename": "20260602_201148_003_20240817_000350.jpg",
           "has_sticker": false,
           "sticker_number": null,
           "sticker_color": null
         }
       ],
       "sticker_info": {
-        "filename": "20260601_215720_036572_6281_60840_4125.jpg",
-        "number": null,
+        "filename": "20260602_201148_003_20240817_000336.jpg",
+        "number": "169",
+        "color": "노란색"
+      },
+      "defect_level": "경미한 불량",
+      "status": "정상"
+    },
+    {
+      "group_id": 4,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201148_004_20240817_000116.jpg",
+          "has_sticker": true,
+          "sticker_number": "102",
+          "sticker_color": "초록색"
+        },
+        {
+          "filename": "20260602_201148_004_20240817_000108.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201148_004_20240817_000136.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201148_004_20240817_000116.jpg",
+        "number": "102",
+        "color": "초록색"
+      },
+      "defect_level": "정상",
+      "status": "정상"
+    },
+    {
+      "group_id": 5,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201148_005_20240817_000444.jpg",
+          "has_sticker": true,
+          "sticker_number": "251",
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201148_005_20240817_000433.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201148_005_20240817_000459.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201148_005_20240817_000444.jpg",
+        "number": "251",
+        "color": "-"
+      },
+      "defect_level": "심각한 불량",
+      "status": "정상"
+    },
+    {
+      "group_id": 6,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201148_006_20240817_000227.jpg",
+          "has_sticker": true,
+          "sticker_number": "104",
+          "sticker_color": "초록색"
+        },
+        {
+          "filename": "20260602_201148_006_20240817_000216.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201149_006_20240817_000238.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201148_006_20240817_000227.jpg",
+        "number": "104",
+        "color": "초록색"
+      },
+      "defect_level": "정상",
+      "status": "정상"
+    },
+    {
+      "group_id": 7,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201149_007_c92257_99.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": null,
+      "defect_level": null,
+      "status": "관련없음"
+    },
+    {
+      "group_id": 8,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201149_008_20240817_000148.jpg",
+          "has_sticker": true,
+          "sticker_number": "103",
+          "sticker_color": "초록색"
+        },
+        {
+          "filename": "20260602_201149_008_20240817_000138.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201149_008_20240817_000204.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201149_008_20240817_000148.jpg",
+        "number": "103",
+        "color": "초록색"
+      },
+      "defect_level": "정상",
+      "status": "정상"
+    },
+    {
+      "group_id": 9,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201149_009_20240817_000512.jpg",
+          "has_sticker": true,
+          "sticker_number": "252",
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201149_009_20240817_000501.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201149_009_20240817_000546.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201149_009_20240817_000512.jpg",
+        "number": "252",
+        "color": "-"
+      },
+      "defect_level": "경미한 불량",
+      "status": "정상"
+    },
+    {
+      "group_id": 10,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201149_010_20240817_000249.jpg",
+          "has_sticker": true,
+          "sticker_number": "105",
+          "sticker_color": "초록색"
+        },
+        {
+          "filename": "20260602_201149_010_20240817_000241.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201149_010_20240817_000314.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201149_010_20240817_000249.jpg",
+        "number": "105",
+        "color": "초록색"
+      },
+      "defect_level": "정상",
+      "status": "정상"
+    },
+    {
+      "group_id": 11,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201149_011_dmbt6_34031327_D00_SPI00.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": null,
+      "defect_level": null,
+      "status": "관련없음"
+    },
+    {
+      "group_id": 12,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201149_012_20240817_000650.jpg",
+          "has_sticker": true,
+          "sticker_number": "253",
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201149_012_20240817_000642.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201149_012_20240817_000707.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201149_012_20240817_000650.jpg",
+        "number": "253",
+        "color": "-"
+      },
+      "defect_level": "심각한 불량",
+      "status": "정상"
+    },
+    {
+      "group_id": 13,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201149_013_20240817_000625.jpg",
+          "has_sticker": true,
+          "sticker_number": "601",
+          "sticker_color": "초록색"
+        },
+        {
+          "filename": "20260602_201149_013_20240817_000552.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201149_013_20240817_000639.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201149_013_20240817_000625.jpg",
+        "number": "601",
+        "color": "초록색"
+      },
+      "defect_level": "정상",
+      "status": "정상"
+    },
+    {
+      "group_id": 14,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201149_014_20240817_000717.jpg",
+          "has_sticker": true,
+          "sticker_number": "254",
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201150_014_20240817_000710.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201150_014_20240817_000731.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201149_014_20240817_000717.jpg",
+        "number": "254",
+        "color": "-"
+      },
+      "defect_level": "경미한 불량",
+      "status": "정상"
+    },
+    {
+      "group_id": 15,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201150_015_20240817_000408.jpg",
+          "has_sticker": true,
+          "sticker_number": "106",
+          "sticker_color": "초록색"
+        },
+        {
+          "filename": "20260602_201150_015_20240817_000355.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201150_015_20240817_000431.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201150_015_20240817_000408.jpg",
+        "number": "106",
         "color": "초록색"
       },
       "defect_level": "정상",
@@ -460,22 +421,10 @@
     },
     {
       "group_id": 16,
-      "timestamp": "2026-06-01 21:59:11",
+      "timestamp": "2026-06-02 20:11:48",
       "images": [
         {
-          "filename": "20260601_215720_050181_SMNM20111906_main3.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215720_073956_abd64b20-e26d-4c08-aa7c-761b48dba2e5.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215720_076861_c92257_99.jpg",
+          "filename": "20260602_201150_016_SMNM20111906_main3.jpg",
           "has_sticker": false,
           "sticker_number": null,
           "sticker_color": null
@@ -483,41 +432,107 @@
       ],
       "sticker_info": null,
       "defect_level": null,
-      "status": "오류"
+      "status": "관련없음"
     },
     {
       "group_id": 17,
-      "timestamp": "2026-06-01 21:59:20",
+      "timestamp": "2026-06-02 20:11:48",
       "images": [
         {
-          "filename": "20260601_215720_079721_dmbt6_34031327_D00_SPI00.jpg",
+          "filename": "20260602_201150_017_20240817_000116.jpg",
+          "has_sticker": true,
+          "sticker_number": "256",
+          "sticker_color": "초록색"
+        },
+        {
+          "filename": "20260602_201150_017_20240817_000108.jpg",
           "has_sticker": false,
           "sticker_number": null,
           "sticker_color": null
         },
         {
-          "filename": "20260601_215720_100391_thumb_d_568043175A035B75FE0CBB82F6E4E084.jpg",
-          "has_sticker": false,
-          "sticker_number": null,
-          "sticker_color": null
-        },
-        {
-          "filename": "20260601_215720_103345_thumb_d_B590F7FDC696D8B1ABC2F65DA4E765C2.png",
+          "filename": "20260602_201150_017_20240817_000136.jpg",
           "has_sticker": false,
           "sticker_number": null,
           "sticker_color": null
         }
       ],
-      "sticker_info": null,
-      "defect_level": null,
-      "status": "오류"
+      "sticker_info": {
+        "filename": "20260602_201150_017_20240817_000116.jpg",
+        "number": "256",
+        "color": "초록색"
+      },
+      "defect_level": "정상",
+      "status": "정상"
     },
     {
       "group_id": 18,
-      "timestamp": "2026-06-01 21:59:23",
+      "timestamp": "2026-06-02 20:11:48",
       "images": [
         {
-          "filename": "20260601_215720_111455_thumb_d_F95D89EC5FB1D5C7F41E5D97A1388799.png",
+          "filename": "20260602_201150_018_20240817_000148.jpg",
+          "has_sticker": true,
+          "sticker_number": "255",
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201150_018_20240817_000138.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201150_018_20240817_000204.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201150_018_20240817_000148.jpg",
+        "number": "255",
+        "color": "-"
+      },
+      "defect_level": "심각한 불량",
+      "status": "정상"
+    },
+    {
+      "group_id": 19,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201150_019_20240817_000249.jpg",
+          "has_sticker": true,
+          "sticker_number": "257",
+          "sticker_color": "초록색"
+        },
+        {
+          "filename": "20260602_201150_019_20240817_000241.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        },
+        {
+          "filename": "20260602_201150_019_20240817_000314.jpg",
+          "has_sticker": false,
+          "sticker_number": null,
+          "sticker_color": null
+        }
+      ],
+      "sticker_info": {
+        "filename": "20260602_201150_019_20240817_000249.jpg",
+        "number": "257",
+        "color": "초록색"
+      },
+      "defect_level": "정상",
+      "status": "정상"
+    },
+    {
+      "group_id": 20,
+      "timestamp": "2026-06-02 20:11:48",
+      "images": [
+        {
+          "filename": "20260602_201150_020_abd64b20-e26d-4c08-aa7c-761b48dba2e5.jpg",
           "has_sticker": false,
           "sticker_number": null,
           "sticker_color": null
@@ -525,45 +540,45 @@
       ],
       "sticker_info": null,
       "defect_level": null,
-      "status": "오류"
+      "status": "관련없음"
     }
   ],
   "results": [
     {
       "id": 1,
-      "timestamp": "2026-06-01 21:57:26",
-      "filename": "20260601_215717_250175_0060060000413.jpg",
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201148_001_20240817_000743.jpg",
       "group_id": 1,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
+      "has_sticker": true,
+      "sticker_number": "112",
+      "sticker_color": "초록색",
+      "defect_level": "정상"
     },
     {
       "id": 2,
-      "timestamp": "2026-06-01 21:57:26",
-      "filename": "20260601_215717_261085_144641_150944_5814.jpg",
-      "group_id": 1,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201148_002_thumb_d_568043175A035B75FE0CBB82F6E4E084.jpg",
+      "group_id": 2,
       "has_sticker": false,
       "sticker_number": null,
       "sticker_color": null,
-      "defect_level": "미확인"
+      "defect_level": "관련없음"
     },
     {
       "id": 3,
-      "timestamp": "2026-06-01 21:57:26",
-      "filename": "20260601_215717_280651_20240817_000105.jpg",
-      "group_id": 1,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201148_003_20240817_000336.jpg",
+      "group_id": 3,
+      "has_sticker": true,
+      "sticker_number": "169",
+      "sticker_color": "노란색",
+      "defect_level": "경미한 불량"
     },
     {
       "id": 4,
-      "timestamp": "2026-06-01 21:57:31",
-      "filename": "20260601_215717_433060_20240817_000116.jpg",
-      "group_id": 2,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201148_004_20240817_000116.jpg",
+      "group_id": 4,
       "has_sticker": true,
       "sticker_number": "102",
       "sticker_color": "초록색",
@@ -571,19 +586,19 @@
     },
     {
       "id": 5,
-      "timestamp": "2026-06-01 21:57:36",
-      "filename": "20260601_215717_665474_20240817_000148.jpg",
-      "group_id": 3,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201148_005_20240817_000444.jpg",
+      "group_id": 5,
       "has_sticker": true,
-      "sticker_number": "103",
-      "sticker_color": "초록색",
-      "defect_level": "정상"
+      "sticker_number": "251",
+      "sticker_color": null,
+      "defect_level": "심각한 불량"
     },
     {
       "id": 6,
-      "timestamp": "2026-06-01 21:57:40",
-      "filename": "20260601_215717_895374_20240817_000227.jpg",
-      "group_id": 4,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201148_006_20240817_000227.jpg",
+      "group_id": 6,
       "has_sticker": true,
       "sticker_number": "104",
       "sticker_color": "초록색",
@@ -591,203 +606,143 @@
     },
     {
       "id": 7,
-      "timestamp": "2026-06-01 21:57:45",
-      "filename": "20260601_215718_131068_20240817_000249.jpg",
-      "group_id": 5,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201149_007_c92257_99.jpg",
+      "group_id": 7,
+      "has_sticker": false,
+      "sticker_number": null,
+      "sticker_color": null,
+      "defect_level": "관련없음"
+    },
+    {
+      "id": 8,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201149_008_20240817_000148.jpg",
+      "group_id": 8,
+      "has_sticker": true,
+      "sticker_number": "103",
+      "sticker_color": "초록색",
+      "defect_level": "정상"
+    },
+    {
+      "id": 9,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201149_009_20240817_000512.jpg",
+      "group_id": 9,
+      "has_sticker": true,
+      "sticker_number": "252",
+      "sticker_color": null,
+      "defect_level": "경미한 불량"
+    },
+    {
+      "id": 10,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201149_010_20240817_000249.jpg",
+      "group_id": 10,
       "has_sticker": true,
       "sticker_number": "105",
       "sticker_color": "초록색",
       "defect_level": "정상"
     },
     {
-      "id": 8,
-      "timestamp": "2026-06-01 21:57:50",
-      "filename": "20260601_215718_354867_20240817_000336.jpg",
-      "group_id": 6,
-      "has_sticker": true,
-      "sticker_number": "169",
-      "sticker_color": "노란색",
-      "defect_level": "경미한 불량"
-    },
-    {
-      "id": 9,
-      "timestamp": "2026-06-01 21:57:56",
-      "filename": "20260601_215718_571190_20240817_000408.jpg",
-      "group_id": 7,
-      "has_sticker": true,
-      "sticker_number": "106",
-      "sticker_color": "초록색",
-      "defect_level": "정상"
-    },
-    {
-      "id": 10,
-      "timestamp": "2026-06-01 21:58:01",
-      "filename": "20260601_215718_806671_20240817_000444.jpg",
-      "group_id": 8,
-      "has_sticker": true,
-      "sticker_number": "107",
-      "sticker_color": "초록색",
-      "defect_level": "정상"
-    },
-    {
       "id": 11,
-      "timestamp": "2026-06-01 21:58:06",
-      "filename": "20260601_215719_034773_20240817_000512.jpg",
-      "group_id": 9,
-      "has_sticker": true,
-      "sticker_number": "108",
-      "sticker_color": "초록색",
-      "defect_level": "정상"
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201149_011_dmbt6_34031327_D00_SPI00.jpg",
+      "group_id": 11,
+      "has_sticker": false,
+      "sticker_number": null,
+      "sticker_color": null,
+      "defect_level": "관련없음"
     },
     {
       "id": 12,
-      "timestamp": "2026-06-01 21:58:10",
-      "filename": "20260601_215719_259186_20240817_000625.jpg",
-      "group_id": 10,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201149_012_20240817_000650.jpg",
+      "group_id": 12,
+      "has_sticker": true,
+      "sticker_number": "253",
+      "sticker_color": null,
+      "defect_level": "심각한 불량"
+    },
+    {
+      "id": 13,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201149_013_20240817_000625.jpg",
+      "group_id": 13,
       "has_sticker": true,
       "sticker_number": "601",
       "sticker_color": "초록색",
       "defect_level": "정상"
     },
     {
-      "id": 13,
-      "timestamp": "2026-06-01 21:58:20",
-      "filename": "20260601_215719_476870_20240817_000650.jpg",
-      "group_id": 11,
-      "has_sticker": true,
-      "sticker_number": "110",
-      "sticker_color": "초록색",
-      "defect_level": "정상"
-    },
-    {
       "id": 14,
-      "timestamp": "2026-06-01 21:58:31",
-      "filename": "20260601_215719_705177_20240817_000717.jpg",
-      "group_id": 12,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201149_014_20240817_000717.jpg",
+      "group_id": 14,
       "has_sticker": true,
-      "sticker_number": "111",
-      "sticker_color": "초록색",
-      "defect_level": "정상"
+      "sticker_number": "254",
+      "sticker_color": null,
+      "defect_level": "경미한 불량"
     },
     {
       "id": 15,
-      "timestamp": "2026-06-01 21:58:42",
-      "filename": "20260601_215719_931859_20240817_000743.jpg",
-      "group_id": 13,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201150_015_20240817_000408.jpg",
+      "group_id": 15,
       "has_sticker": true,
-      "sticker_number": "112",
+      "sticker_number": "106",
       "sticker_color": "초록색",
       "defect_level": "정상"
     },
     {
       "id": 16,
-      "timestamp": "2026-06-01 21:58:52",
-      "filename": "20260601_215719_999177_30_5580879.jpg",
-      "group_id": 14,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201150_016_SMNM20111906_main3.jpg",
+      "group_id": 16,
       "has_sticker": false,
       "sticker_number": null,
       "sticker_color": null,
-      "defect_level": "미확인"
+      "defect_level": "관련없음"
     },
     {
       "id": 17,
-      "timestamp": "2026-06-01 21:58:52",
-      "filename": "20260601_215720_024112_4711_number_sticker_d_08_02.jpg",
-      "group_id": 14,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201150_017_20240817_000116.jpg",
+      "group_id": 17,
+      "has_sticker": true,
+      "sticker_number": "256",
+      "sticker_color": "초록색",
+      "defect_level": "정상"
     },
     {
       "id": 18,
-      "timestamp": "2026-06-01 21:58:52",
-      "filename": "20260601_215720_028825_4711_number_sticker_d_09_02.jpg",
-      "group_id": 14,
-      "has_sticker": false,
-      "sticker_number": null,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201150_018_20240817_000148.jpg",
+      "group_id": 18,
+      "has_sticker": true,
+      "sticker_number": "255",
       "sticker_color": null,
-      "defect_level": "미확인"
+      "defect_level": "심각한 불량"
     },
     {
       "id": 19,
-      "timestamp": "2026-06-01 21:59:04",
-      "filename": "20260601_215720_036572_6281_60840_4125.jpg",
-      "group_id": 15,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201150_019_20240817_000249.jpg",
+      "group_id": 19,
       "has_sticker": true,
-      "sticker_number": null,
+      "sticker_number": "257",
       "sticker_color": "초록색",
       "defect_level": "정상"
     },
     {
       "id": 20,
-      "timestamp": "2026-06-01 21:59:11",
-      "filename": "20260601_215720_050181_SMNM20111906_main3.jpg",
-      "group_id": 16,
+      "timestamp": "2026-06-02 20:11:48",
+      "filename": "20260602_201150_020_abd64b20-e26d-4c08-aa7c-761b48dba2e5.jpg",
+      "group_id": 20,
       "has_sticker": false,
       "sticker_number": null,
       "sticker_color": null,
-      "defect_level": "미확인"
-    },
-    {
-      "id": 21,
-      "timestamp": "2026-06-01 21:59:11",
-      "filename": "20260601_215720_073956_abd64b20-e26d-4c08-aa7c-761b48dba2e5.jpg",
-      "group_id": 16,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
-    },
-    {
-      "id": 22,
-      "timestamp": "2026-06-01 21:59:11",
-      "filename": "20260601_215720_076861_c92257_99.jpg",
-      "group_id": 16,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
-    },
-    {
-      "id": 23,
-      "timestamp": "2026-06-01 21:59:20",
-      "filename": "20260601_215720_079721_dmbt6_34031327_D00_SPI00.jpg",
-      "group_id": 17,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
-    },
-    {
-      "id": 24,
-      "timestamp": "2026-06-01 21:59:20",
-      "filename": "20260601_215720_100391_thumb_d_568043175A035B75FE0CBB82F6E4E084.jpg",
-      "group_id": 17,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
-    },
-    {
-      "id": 25,
-      "timestamp": "2026-06-01 21:59:20",
-      "filename": "20260601_215720_103345_thumb_d_B590F7FDC696D8B1ABC2F65DA4E765C2.png",
-      "group_id": 17,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
-    },
-    {
-      "id": 26,
-      "timestamp": "2026-06-01 21:59:23",
-      "filename": "20260601_215720_111455_thumb_d_F95D89EC5FB1D5C7F41E5D97A1388799.png",
-      "group_id": 18,
-      "has_sticker": false,
-      "sticker_number": null,
-      "sticker_color": null,
-      "defect_level": "미확인"
+      "defect_level": "관련없음"
     }
   ]
 }
